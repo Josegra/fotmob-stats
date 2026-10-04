@@ -766,7 +766,12 @@ function drawShots(){
   ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.fillRect(gx0,gy-18,gx1-gx0,18);
   ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.fillRect(gx0,gy-3,gx1-gx0,3);
 
-  const shots = PLAYER.shots.map(s=>({...s,_cls:classify(s)})).filter(s=>SHOT_FILTERS[s._cls]);
+  // Shots taken from outside the visible box crop (x < X0) are excluded rather
+  // than clamped to the bottom edge — clamping kept their real (often wide)
+  // lateral position, which looked like stray marks scattered off to the
+  // sides with no pitch context. Total counts in the stat tiles above still
+  // reflect every shot regardless of origin; only the plot itself is cropped.
+  const shots = PLAYER.shots.map(s=>({...s,_cls:classify(s)})).filter(s=>SHOT_FILTERS[s._cls] && s.x!=null && s.x>=X0);
   const order=['miss','blocked','saved','goal'];
   const tipTargets=[];
 
@@ -780,7 +785,7 @@ function drawShots(){
       if(s.ex!=null && s.ey!=null) end={x:s.ex,y:s.ey};
       else if(s.is_goal) end={x:100.3, y:Math.max(44.5,Math.min(55.5,s.y))};
       if(!end) return;
-      const px0=cx(s.y), py0=cy(Math.max(s.x,X0+0.8));
+      const px0=cx(s.y), py0=cy(Math.min(s.x,X1-0.2));
       const px1=cx(end.y), py1=cy(end.x);
       ctx.beginPath(); ctx.moveTo(px0,py0); ctx.lineTo(px1,py1);
       ctx.strokeStyle=SHOT_CFG[cls].color; ctx.lineWidth=cls==='goal'?1.6:1;
@@ -790,7 +795,7 @@ function drawShots(){
 
   order.forEach(cls=>{
     shots.filter(s=>s._cls===cls).forEach(s=>{
-      const px=cx(s.y), py=cy(Math.max(s.x,X0+0.8));
+      const px=cx(s.y), py=cy(Math.min(s.x,X1-0.2));
       const r = shotRadius(s.xg);
       const cfg=SHOT_CFG[cls];
       ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2);
