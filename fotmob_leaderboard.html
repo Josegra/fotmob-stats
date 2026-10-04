@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Player Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#ea3323; --brand-ink:#b31c10; --brand-wash:#fdeceb;
+  --pos-fw-bg:#fde7e6; --pos-fw-ink:#b3261e;
+  --pos-mf-bg:#e8eefc; --pos-mf-ink:#1f4ea8;
+  --pos-df-bg:#e5f4ea; --pos-df-ink:#0f7a4e;
+  --pos-gk-bg:#fdf1db; --pos-gk-ink:#92660c;
+  --up:#1a8a4a; --down:#d6362a;
+  --seq-0:255,255,255; --seq-25:255,241,214; --seq-50:255,201,140; --seq-75:248,140,74; --seq-100:201,35,25;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.mono{font-variant-numeric:tabular-nums}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ── PAGE HEADER ───────────────────────────────────────────────────────── */
+.pagehead{max-width:1440px;margin:0 auto;padding:28px 28px 18px}
+.pagehead-top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:17px;letter-spacing:-0.01em;color:var(--ink)}
+.brand-dot{width:7px;height:7px;border-radius:50%;background:var(--brand)}
+.brand-sub{font-family:'Roboto',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+.pagehead-count{font-family:'Roboto',sans-serif;font-size:11.5px;font-weight:600;color:var(--muted)}
+.pagehead h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;letter-spacing:-0.02em;margin-top:14px;color:var(--ink)}
+.pagehead p{font-size:13px;color:var(--ink-2);margin-top:5px;max-width:580px;line-height:1.5}
+
+/* ── TOOLBAR LAYER ─────────────────────────────────────────────────────── */
+.app{max-width:1440px;margin:0 auto;padding:0 28px 60px}
+.card{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.search-box{position:relative;flex:1;min-width:230px}
+.search-box input{width:100%;height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 12px 0 34px;
+  font:inherit;font-size:13px;background:var(--surface-2);color:var(--ink);transition:border-color .12s,background .12s}
+.search-box input:focus{outline:none;border-color:var(--brand);background:#fff}
+.search-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted)}
+.fieldset{display:flex;align-items:center;gap:7px}
+.fieldset label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+.pick{height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 30px 0 11px;font:inherit;font-size:12.5px;
+  font-weight:600;background:var(--surface-2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+  color:var(--ink);cursor:pointer;appearance:none;-webkit-appearance:none;transition:border-color .12s}
+.pick:hover{border-color:var(--ink-2)}
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:4px;padding:2px;gap:1px}
+.seg button{background:transparent;border:none;border-radius:3px;padding:0 12px;height:32px;
+  font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap;transition:all .12s}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--ink);color:#fff}
+
+/* ── CUSTOM COLUMN PICKER ──────────────────────────────────────────────── */
+.colpick{position:relative}
+.colpick-btn{height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 14px;font:inherit;font-size:12.5px;
+  font-weight:700;background:var(--surface-2);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .12s}
+.colpick-btn:hover{border-color:var(--ink-2);color:var(--ink)}
+.colpick-btn.active{background:var(--brand-ink);border-color:var(--brand-ink);color:#fff}
+.colpick-btn svg{width:13px;height:13px}
+.colpick-panel{position:absolute;top:44px;right:0;width:380px;max-height:60vh;overflow-y:auto;background:#fff;
+  border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);padding:4px 0;z-index:50;display:none}
+.colpick-panel.open{display:block}
+.cc-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.cc-head b{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800}
+.cc-head button{background:none;border:none;color:var(--brand-ink);font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.cc-group{padding:8px 14px}
+.cc-group-hd{display:flex;align-items:center;justify-content:space-between;font-size:9.5px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
+.cc-group-hd button{background:none;border:none;color:var(--brand-ink);font:inherit;font-size:9.5px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0}
+.cc-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px}
+.cc-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);padding:2px 0;cursor:pointer}
+.cc-item input{accent-color:var(--brand-ink);cursor:pointer}
+.cc-item:hover{color:var(--ink)}
+
+/* ── CATEGORY TABS ─────────────────────────────────────────────────────── */
+.cat-tabs{display:flex;gap:4px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.cat-tab{background:transparent;border:1px solid transparent;border-radius:3px;padding:0 13px;height:30px;
+  font:inherit;font-size:11.5px;font-weight:600;color:var(--ink-2);cursor:pointer;white-space:nowrap;transition:all .12s}
+.cat-tab:hover{background:var(--surface);border-color:var(--line-strong);color:var(--ink)}
+.cat-tab.on{background:var(--brand-ink);border-color:var(--brand-ink);color:#fff;font-weight:700}
+
+/* ── TABLE: HEADER LAYER ───────────────────────────────────────────────── */
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-size:9.5px;font-weight:700;
+  letter-spacing:0.07em;text-transform:uppercase;padding:11px 12px;text-align:right;white-space:nowrap;cursor:pointer;
+  user-select:none;border-bottom:1.5px solid var(--line-strong);z-index:3;transition:color .12s,background .12s}
+thead th:first-child,thead th:nth-child(2){text-align:left}
+thead th:hover{color:var(--ink);background:var(--surface-2)}
+thead th.sorted{color:var(--brand-ink)}
+thead th .arrows{display:inline-flex;flex-direction:column;margin-left:4px;vertical-align:middle;gap:1px}
+thead th .arrows svg{width:7px;height:7px;display:block}
+thead th .arrows .up{opacity:0.3}
+thead th .arrows .dn{opacity:0.3}
+thead th.sorted.asc .arrows .up{opacity:1;color:var(--brand-ink)}
+thead th.sorted.desc .arrows .dn{opacity:1;color:var(--brand-ink)}
+
+/* ── TABLE: BODY LAYER ─────────────────────────────────────────────────── */
+tbody tr{border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s}
+tbody tr:hover{background:var(--brand-wash)}
+tbody tr:hover td.stick{background:var(--brand-wash)}
+td{padding:9px 12px;font-size:12.5px;text-align:right;white-space:nowrap;color:var(--ink)}
+td.l{text-align:left}
+th.stick,td.stick{position:sticky;background:var(--surface);z-index:1}
+th.stick{background:var(--surface);z-index:3}
+.rank{color:var(--muted);font-size:11px;font-weight:700;width:34px;left:0}
+.rank.mono{font-family:'Roboto',sans-serif}
+th.rank{left:0}
+.pcell-col{left:34px;min-width:188px}
+th.pcell-col{left:34px}
+.pcell{display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--surface-2);flex-shrink:0;border:1px solid var(--line)}
+.avatar-ph{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:800;color:#fff}
+.pname{font-weight:700;font-size:12.5px;color:var(--ink);line-height:1.25}
+.pteam{font-size:10.5px;color:var(--muted);line-height:1.25;margin-top:1px}
+.postag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:0.01em}
+.lgtag{font-size:10.5px;color:var(--ink-2);font-weight:500}
+.stat-cell{font-weight:700;font-variant-numeric:tabular-nums;font-size:12px;border-radius:3px}
+.mv-cell{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;font-size:12.5px}
+.trend-cell{padding:6px 12px}
+.spark{display:block;margin-left:auto}
+
+.pager{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 16px;flex-wrap:wrap}
+.pager-info{font-size:11.5px;color:var(--muted)}
+.pager-right{display:flex;align-items:center;gap:14px}
+.rpp{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted)}
+.rpp select{height:30px;border:1px solid var(--line-strong);border-radius:4px;padding:0 24px 0 9px;font:inherit;font-size:11.5px;
+  font-weight:600;background:var(--surface-2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 8px center;
+  color:var(--ink);cursor:pointer;appearance:none;-webkit-appearance:none}
+.pgnums{display:flex;align-items:center;gap:3px}
+.pgbtn{min-width:28px;height:28px;border:1px solid var(--line-strong);border-radius:3px;background:#fff;font:inherit;
+  font-size:11.5px;font-weight:700;color:var(--ink-2);cursor:pointer;padding:0 6px}
+.pgbtn:hover:not(:disabled){background:var(--surface-2);border-color:var(--ink-2)}
+.pgbtn:disabled{opacity:0.35;cursor:default}
+.pgbtn.on{background:var(--brand-ink);color:#fff;border-color:var(--brand-ink)}
+.pgdots{font-size:11px;color:var(--muted);padding:0 2px}
+
+.loading-row{padding:60px;text-align:center;color:var(--muted);font-size:12px}
+@media(max-width:760px){
+  .app,.pagehead{padding-left:12px;padding-right:12px}
+  td,thead th{padding:8px 7px;font-size:11.5px}
+}
+</style>
+</head>
+<body>
+
+<div class="pagehead">
+  <div class="pagehead-top">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-mark">Fotmob</span>
+      <span class="brand-sub">Player Database</span>
+    </div>
+    <div class="pagehead-count" id="count-badge"></div>
+  </div>
+  <h1>Search every player</h1>
+  <p id="pagehead-desc">Players across 28 leagues and two seasons, built from full-season Fotmob tracking data. Filter by position, league, season or minutes played, switch stat categories, then open a player for the full scouting report.</p>
+</div>
+
+<div class="app">
+  <div class="card">
+    <div class="toolbar">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="search" type="text" placeholder="Search player or team…" autocomplete="off">
+      </div>
+      <div class="seg" id="pos-seg"></div>
+      <div class="fieldset">
+        <label>League</label>
+        <select class="pick" id="league-sel"><option value="">All</option></select>
+      </div>
+      <div class="fieldset">
+        <label>Season</label>
+        <select class="pick" id="season-sel"><option value="">All</option></select>
+      </div>
+      <div class="fieldset">
+        <label>Min</label>
+        <select class="pick" id="mins-sel">
+          <option value="0">Any</option>
+          <option value="450">450+</option>
+          <option value="900" selected>900+</option>
+          <option value="1350">1,350+</option>
+          <option value="1800">1,800+</option>
+          <option value="2700">2,700+</option>
+        </select>
+      </div>
+      <div class="colpick" id="colpick">
+        <button class="colpick-btn" id="colpick-btn" onclick="toggleColPanel(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          Columns
+        </button>
+        <div class="colpick-panel" id="colpick-panel"></div>
+      </div>
+    </div>
+    <div class="cat-tabs" id="cat-tabs"></div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody"><tr><td colspan="12" class="loading-row">Loading 15,142 players…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager"></div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const POS_GROUPS = [
+  ['', 'All'], ['Goalkeeper','GK'],
+  ['Centre-Back,Left-Back,Right-Back,Left Wing-Back,Right Wing-Back','DEF'],
+  ['Defensive Midfield,Central Midfield,Attacking Midfield,Left Midfield,Right Midfield','MID'],
+  ['Striker,Left Winger,Right Winger','FWD'],
+];
+const POS_STYLE = {
+  Striker:['var(--pos-fw-bg)','var(--pos-fw-ink)'],'Left Winger':['var(--pos-fw-bg)','var(--pos-fw-ink)'],'Right Winger':['var(--pos-fw-bg)','var(--pos-fw-ink)'],
+  'Centre-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Left-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Right-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],
+  'Left Wing-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Right Wing-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],
+  'Goalkeeper':['var(--pos-gk-bg)','var(--pos-gk-ink)'],
+};
+const AVATAR_BG = ['#1f4ea8','#0f7a4e','#b3261e','#92660c','#6d3fae','#1a7f8e','#a1472e','#3a5a9e'];
+function posStyle(p){ return POS_STYLE[p]||['var(--pos-mf-bg)','var(--pos-mf-ink)']; }
+function posAbbr(p){ if(!p) return '—'; if(p==='Goalkeeper') return 'GK'; if(p.includes('Back')) return 'DF';
+  if(p.includes('Midfield')) return 'MF'; return 'FW'; }
+function avatarColor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))>>>0; return AVATAR_BG[h%AVATAR_BG.length]; }
+function fmtM(v){ if(v==null) return '—'; const a=Math.abs(v);
+  if(a>=1e6) return '€'+(v/1e6).toFixed(1)+'M'; if(a>=1e3) return '€'+(v/1e3).toFixed(0)+'K'; return '€'+v; }
+function fmtNum(v,d=0){ return v==null ? '—' : (+v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+// Sequential cream->orange->red heat ramp (FiveThirtyEight-style magnitude
+// encoding) — intensity alone signals "how extreme", not a good/bad split.
+const HEAT_STOPS = [[0,255,255,255],[25,255,241,214],[50,255,201,140],[75,248,140,74],[100,201,35,25]];
+function heatRgb(p){
+  if(p==null) return null;
+  p = Math.max(0,Math.min(100,p));
+  for(let i=0;i<HEAT_STOPS.length-1;i++){
+    const [t0,r0,g0,b0]=HEAT_STOPS[i], [t1,r1,g1,b1]=HEAT_STOPS[i+1];
+    if(p>=t0 && p<=t1){ const f=(p-t0)/(t1-t0); return [r0+(r1-r0)*f, g0+(g1-g0)*f, b0+(b1-b0)*f]; }
+  }
+  return HEAT_STOPS[HEAT_STOPS.length-1].slice(1);
+}
+function pctBg(p){ const c=heatRgb(p); return c? `rgb(${c[0].toFixed(0)},${c[1].toFixed(0)},${c[2].toFixed(0)})` : 'transparent'; }
+function pctFg(p){ const c=heatRgb(p); if(!c) return 'var(--ink)';
+  const lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255; return lum<0.56 ? '#fff' : 'var(--ink)'; }
+function fmtStat(v,label){
+  if(v==null) return '—';
+  if(label && label.includes('%')) return v.toFixed(1);
+  if(Number.isInteger(v)) return fmtNum(v);
+  return v.toFixed(2);
+}
+function sparkSvg(trend){
+  if(!trend || trend.length<2) return `<span style="color:var(--muted);font-size:11px">—</span>`;
+  const W=58,H=22,pad=2;
+  const min=Math.min(...trend), max=Math.max(...trend), range=(max-min)||1;
+  const pts = trend.map((v,i)=>{
+    const x = pad + i/(trend.length-1)*(W-pad*2);
+    const y = H-pad - (v-min)/range*(H-pad*2);
+    return [x,y];
+  });
+  const d = pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const delta = trend[trend.length-1]-trend[0];
+  const col = delta>0?'var(--up)':delta<0?'var(--down)':'var(--muted)';
+  const last = pts[pts.length-1];
+  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="1.8" fill="${col}"/>
+  </svg>`;
+}
+const SORT_ICON = `<span class="arrows"><svg class="up" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5l7 9H5z"/></svg><svg class="dn" viewBox="0 0 24 24" fill="currentColor"><path d="M12 19l-7-9h14z"/></svg></span>`;
+
+const BASE_COLS = [
+  {k:'rank',label:'#',sort:null,cls:'rank stick mono'},
+  {k:'player',label:'Player',sort:'name',cls:'pcell-col stick'},
+  {k:'pos',label:'Pos',sort:null},
+  {k:'league',label:'League',sort:null},
+  {k:'age',label:'Age',sort:'age'},
+  {k:'mp',label:'MP',sort:'mp'},
+  {k:'rating',label:'Rating',sort:'rating'},
+];
+const TAIL_COLS = [
+  {k:'mv',label:'Value',sort:'mv'},
+  {k:'trend',label:'Trend',sort:null},
+];
+const OVERVIEW_COLS = [
+  {cat:'Attacking',key:'goals',label:'G'},
+  {cat:'Attacking',key:'xg',label:'xG'},
+  {cat:'Attacking',key:'assists',label:'A'},
+  {cat:'Attacking',key:'xa',label:'xA'},
+  {cat:'Defending',key:'tackles',label:'Tkl'},
+  {cat:'Defending',key:'interceptions',label:'Int'},
+];
+const CAT_ORDER = ['Overview','Attacking','Passing & Creativity','Dribbling & Ball Carrying','Defending','Physical','Discipline','Goalkeeping','All'];
+
+let DATA=[], FILTERED=[], CATEGORIES={}, ACTIVE_CAT='Overview';
+let SORT_KEY='rating', SORT_DIR=-1, PAGE=1, PER_PAGE=50;
+let FILTER_POS='', FILTER_LEAGUE='', FILTER_SEASON='', FILTER_Q='', FILTER_MINS=900;
+let CUSTOM_SET=new Set(), CUSTOM_ACTIVE=false;
+
+function allMetrics(){
+  const out=[];
+  for(const cat of CAT_ORDER){
+    if(cat==='Overview'||cat==='All') continue;
+    (CATEGORIES[cat]||[]).forEach(m=>out.push({cat,key:m.key,label:m.label,dir:m.dir}));
+  }
+  return out;
+}
+
+function dynCols(){
+  if(CUSTOM_ACTIVE) return allMetrics().filter(m=>CUSTOM_SET.has(m.cat+'|'+m.key));
+  if(ACTIVE_CAT==='Overview') return OVERVIEW_COLS;
+  if(ACTIVE_CAT==='All'){
+    const out=[];
+    for(const cat of CAT_ORDER){
+      if(cat==='Overview'||cat==='All') continue;
+      (CATEGORIES[cat]||[]).forEach(m=>out.push({cat,key:m.key,label:m.label,dir:m.dir}));
+    }
+    return out;
+  }
+  return (CATEGORIES[ACTIVE_CAT]||[]).map(m=>({cat:ACTIVE_CAT,key:m.key,label:m.label,dir:m.dir}));
+}
+
+function buildColPanel(){
+  const groups = CAT_ORDER.filter(c=>c!=='Overview'&&c!=='All').map(cat=>{
+    const metrics = CATEGORIES[cat]||[];
+    const items = metrics.map(m=>{
+      const checked = CUSTOM_SET.has(cat+'|'+m.key);
+      return `<label class="cc-item"><input type="checkbox" data-cat="${cat}" data-key="${m.key}" ${checked?'checked':''}> ${m.label}</label>`;
+    }).join('');
+    return `<div class="cc-group"><div class="cc-group-hd"><span>${cat}</span><button type="button" data-allcat="${cat}">Select all</button></div><div class="cc-grid">${items}</div></div>`;
+  }).join('');
+  $('colpick-panel').innerHTML = `<div class="cc-head"><b>Custom stats</b><button type="button" id="cc-clear">Clear all</button></div>${groups}`;
+  $('colpick-panel').querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      const k = cb.dataset.cat+'|'+cb.dataset.key;
+      if(cb.checked) CUSTOM_SET.add(k); else CUSTOM_SET.delete(k);
+      onCustomChange();
+    });
+  });
+  $('colpick-panel').querySelectorAll('button[data-allcat]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const cat=btn.dataset.allcat;
+      (CATEGORIES[cat]||[]).forEach(m=>CUSTOM_SET.add(cat+'|'+m.key));
+      buildColPanel(); onCustomChange();
+    });
+  });
+  $('cc-clear').addEventListener('click',()=>{ CUSTOM_SET.clear(); buildColPanel(); onCustomChange(); });
+}
+function onCustomChange(){
+  CUSTOM_ACTIVE = CUSTOM_SET.size>0;
+  $('colpick-btn').classList.toggle('active',CUSTOM_ACTIVE);
+  $('colpick-btn').lastChild.textContent = CUSTOM_ACTIVE ? ` Columns (${CUSTOM_SET.size})` : ' Columns';
+  document.querySelectorAll('.cat-tab').forEach(b=>b.classList.toggle('on', !CUSTOM_ACTIVE && b.dataset.cat===ACTIVE_CAT));
+  buildHeader(); applyFilters();
+}
+function toggleColPanel(e){ e.stopPropagation(); $('colpick-panel').classList.toggle('open'); }
+document.addEventListener('click',e=>{ if(!e.target.closest('#colpick')) $('colpick-panel').classList.remove('open'); });
+
+function resolveStat(p,sortKey){
+  if(sortKey && sortKey.includes('|')){
+    const i=sortKey.indexOf('|'); const cat=sortKey.slice(0,i), key=sortKey.slice(i+1);
+    const arr = p.cats && p.cats[cat] && p.cats[cat][key];
+    return arr ? {val:arr[0], pct:arr[1]} : {val:null, pct:null};
+  }
+  if(sortKey==='rating') return {val:p.rating, pct:p.rating_pct};
+  return {val:p[sortKey], pct:null};
+}
+
+function buildHeader(){
+  const dyn = dynCols();
+  const cells = [];
+  BASE_COLS.forEach(c=>cells.push(`<th class="${c.cls||''}" data-sort="${c.sort||''}">${c.label}${c.sort?SORT_ICON:''}</th>`));
+  dyn.forEach(c=>cells.push(`<th data-sort="${c.cat}|${c.key}" title="${c.label}">${c.label}${SORT_ICON}</th>`));
+  TAIL_COLS.forEach(c=>cells.push(`<th data-sort="${c.sort||''}">${c.label}${c.sort?SORT_ICON:''}</th>`));
+  $('thead-row').innerHTML = cells.join('');
+  document.querySelectorAll('thead th[data-sort]').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const key=th.dataset.sort; if(!key) return;
+      if(SORT_KEY===key) SORT_DIR*=-1; else { SORT_KEY=key; SORT_DIR=-1; }
+      applyFilters();
+    });
+  });
+}
+
+Promise.all([
+  fetch('data/fotmob_index.json').then(r=>r.json()),
+  fetch('data/fotmob_categories.json').then(r=>r.json()),
+]).then(([d,cats])=>{
+  DATA=d; CATEGORIES=cats;
+  $('count-badge').textContent = d.length.toLocaleString()+' players';
+  $('pagehead-desc').textContent = `${d.length.toLocaleString()} player-seasons across 28 leagues, built from full-season Fotmob tracking data. Filter by position, league, season or minutes played, switch stat categories, then open a player for the full scouting report.`;
+  const leagues=[...new Set(d.map(p=>p.league).filter(Boolean))].sort();
+  $('league-sel').innerHTML += leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
+  const seasons=[...new Set(d.map(p=>p.season).filter(Boolean))].sort().reverse();
+  $('season-sel').innerHTML += seasons.map(s=>`<option value="${s}">${s}</option>`).join('');
+  $('pos-seg').innerHTML = POS_GROUPS.map(([val,label],i)=>
+    `<button class="${i===0?'on':''}" data-val="${val}" onclick="setPosFilter('${val.replace(/'/g,"\\'")}',this)">${label}</button>`).join('');
+  $('cat-tabs').innerHTML = CAT_ORDER.map((c,i)=>
+    `<button class="cat-tab ${i===0?'on':''}" data-cat="${c}" onclick="setCat('${c.replace(/'/g,"\\'")}',this)">${c}</button>`).join('');
+  buildColPanel();
+  buildHeader();
+  applyFilters();
+});
+
+function setCat(cat,btn){
+  ACTIVE_CAT=cat;
+  CUSTOM_ACTIVE=false;
+  $('colpick-btn').classList.remove('active');
+  $('colpick-btn').lastChild.textContent = ' Columns';
+  document.querySelectorAll('.cat-tab').forEach(b=>b.classList.toggle('on',b===btn));
+  if(SORT_KEY!=='rating' && SORT_KEY!=='mv' && SORT_KEY!=='name' && SORT_KEY!=='age' && SORT_KEY!=='mp'){
+    SORT_KEY='rating'; SORT_DIR=-1;
+  }
+  buildHeader();
+  applyFilters();
+}
+function setPosFilter(val,btn){ FILTER_POS=val; document.querySelectorAll('#pos-seg button').forEach(b=>b.classList.toggle('on',b===btn)); PAGE=1; applyFilters(); }
+$('league-sel').addEventListener('change',e=>{ FILTER_LEAGUE=e.target.value; PAGE=1; applyFilters(); });
+$('season-sel').addEventListener('change',e=>{ FILTER_SEASON=e.target.value; PAGE=1; applyFilters(); });
+$('mins-sel').addEventListener('change',e=>{ FILTER_MINS=+e.target.value; PAGE=1; applyFilters(); });
+let searchDebounce;
+$('search').addEventListener('input',e=>{
+  clearTimeout(searchDebounce);
+  searchDebounce=setTimeout(()=>{ FILTER_Q=e.target.value.trim().toLowerCase(); PAGE=1; applyFilters(); },150);
+});
+
+function applyFilters(){
+  FILTERED = DATA.filter(p=>{
+    if(FILTER_POS && !FILTER_POS.split(',').includes(p.pos)) return false;
+    if(FILTER_LEAGUE && p.league!==FILTER_LEAGUE) return false;
+    if(FILTER_SEASON && p.season!==FILTER_SEASON) return false;
+    if(FILTER_MINS && (p.mins==null || p.mins<FILTER_MINS)) return false;
+    if(FILTER_Q && !(p.name&&p.name.toLowerCase().includes(FILTER_Q)) && !(p.team&&p.team.toLowerCase().includes(FILTER_Q))) return false;
+    return true;
+  });
+  FILTERED.sort((a,b)=>{
+    if(SORT_KEY==='name'){ const av=a.name||'', bv=b.name||''; return SORT_DIR* -1 * av.localeCompare(bv); }
+    let av=resolveStat(a,SORT_KEY).val, bv=resolveStat(b,SORT_KEY).val;
+    av=av==null?-Infinity:av; bv=bv==null?-Infinity:bv;
+    return SORT_DIR* (av-bv);
+  });
+  document.querySelectorAll('thead th').forEach(th=>{
+    const isSorted = th.dataset.sort===SORT_KEY;
+    th.classList.toggle('sorted',isSorted);
+    th.classList.toggle('asc', isSorted && SORT_DIR>0 && SORT_KEY!=='name');
+    th.classList.toggle('desc', isSorted && (SORT_DIR<0 || SORT_KEY==='name') );
+  });
+  renderPage();
+}
+
+function renderPage(){
+  const dyn = dynCols();
+  const colCount = BASE_COLS.length + dyn.length + TAIL_COLS.length;
+  const totalPages=Math.max(1,Math.ceil(FILTERED.length/PER_PAGE));
+  PAGE=Math.min(PAGE,totalPages);
+  const start=(PAGE-1)*PER_PAGE;
+  const rows=FILTERED.slice(start,start+PER_PAGE);
+  if(!rows.length){ $('tbody').innerHTML=`<tr><td colspan="${colCount}" class="loading-row">No players match these filters.</td></tr>`; $('pager').innerHTML=''; return; }
+
+  $('tbody').innerHTML = rows.map((p,i)=>{
+    const initials=(p.name||'?').split(' ').map(s=>s[0]).filter(Boolean).slice(-2).join('');
+    const avCol = avatarColor(p.name);
+    const photoHtml = p.photo ? `<img class="avatar" src="${p.photo}" onerror="this.outerHTML='<div class=\\'avatar-ph\\' style=\\'background:${avCol}\\'>${initials}</div>'">`
+      : `<div class="avatar-ph" style="background:${avCol}">${initials}</div>`;
+    const [pbg,pink] = posStyle(p.pos);
+    const dynCells = dyn.map(c=>{
+      const {val,pct} = resolveStat(p,`${c.cat}|${c.key}`);
+      const dispPct = pct!=null && c.dir<0 ? 100-pct : pct;
+      return `<td class="tnum stat-cell" style="background:${pctBg(dispPct)};color:${pctFg(dispPct)}">${fmtStat(val,c.label)}</td>`;
+    }).join('');
+    return `<tr onclick="location.href='fotmob_player.html?id=${p.id}'">
+      <td class="rank stick mono">${start+i+1}</td>
+      <td class="l pcell-col stick"><div class="pcell">${photoHtml}<div><div class="pname">${p.name||'—'}</div><div class="pteam">${p.team||'Free Agent'}</div></div></div></td>
+      <td><span class="postag" style="background:${pbg};color:${pink}">${posAbbr(p.pos)}</span></td>
+      <td class="l lgtag">${p.league||'—'}</td>
+      <td class="tnum mono">${fmtNum(p.age)}</td>
+      <td class="tnum mono">${fmtNum(p.mp)}</td>
+      <td class="tnum stat-cell" style="background:${pctBg(p.rating_pct)};color:${pctFg(p.rating_pct)}">${p.rating!=null?p.rating.toFixed(2):'—'}</td>
+      ${dynCells}
+      <td class="mv-cell">${fmtM(p.mv)}</td>
+      <td class="trend-cell">${sparkSvg(p.trend)}</td>
+    </tr>`;
+  }).join('');
+
+  const pages=[];
+  const add=n=>pages.push(n);
+  if(totalPages<=7){ for(let i=1;i<=totalPages;i++) add(i); }
+  else{
+    add(1); if(PAGE>3) add('…');
+    for(let i=Math.max(2,PAGE-1); i<=Math.min(totalPages-1,PAGE+1); i++) add(i);
+    if(PAGE<totalPages-2) add('…'); add(totalPages);
+  }
+  $('pager').innerHTML = `
+    <div class="pager-info">Showing ${(start+1).toLocaleString()}–${Math.min(start+PER_PAGE,FILTERED.length).toLocaleString()} of ${FILTERED.length.toLocaleString()} results</div>
+    <div class="pager-right">
+      <div class="rpp">Rows per page
+        <select onchange="setPerPage(this.value)">
+          ${[25,50,100,200].map(n=>`<option value="${n}" ${n===PER_PAGE?'selected':''}>${n}</option>`).join('')}
+        </select>
+      </div>
+      <div class="pgnums">
+        <button class="pgbtn" ${PAGE===1?'disabled':''} onclick="gotoPage(${PAGE-1})">‹ Prev</button>
+        ${pages.map(p=>p==='…'?`<span class="pgdots">…</span>`:`<button class="pgbtn ${p===PAGE?'on':''}" onclick="gotoPage(${p})">${p}</button>`).join('')}
+        <button class="pgbtn" ${PAGE===totalPages?'disabled':''} onclick="gotoPage(${PAGE+1})">Next ›</button>
+      </div>
+    </div>
+  `;
+}
+function gotoPage(n){ PAGE=n; renderPage(); window.scrollTo({top:0,behavior:'smooth'}); }
+function setPerPage(n){ PER_PAGE=+n; PAGE=1; renderPage(); }
+</script>
+</body>
+</html>
