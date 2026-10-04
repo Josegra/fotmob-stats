@@ -193,6 +193,22 @@ def safe(v, nd=None):
     return v
 
 
+def minutes_played_with_gk_estimate(row, is_gk, matches_played, matches_started):
+    """Fotmob's API has no 'Minutes played' stat for goalkeepers at all (confirmed
+    2026-10-05 against the live playerData endpoint — neither topStatCard nor
+    statsSection carries it for the keeper position), so minutes_played is null
+    for ~98% of keepers even when they started every match. A keeper who starts
+    is essentially never substituted, so matches_started*90 (falling back to
+    matches_played*90) is a safe, clearly-labelled estimate rather than leaving
+    real starting keepers invisible to any minutes-based filter.
+    """
+    mins = safe(row.get('minutes_played'))
+    if mins is not None or not is_gk:
+        return mins
+    basis = matches_started if matches_started is not None else matches_played
+    return round(basis * 90) if basis is not None else None
+
+
 def parse_json_col(v):
     if v is None:
         return []
@@ -301,6 +317,8 @@ def process_dataframe(df, trend_map, season_index, out_id_fn, season_label_fn):
         pos_key = row.get('position_key')
         is_gk = pos_key == 'keeper_long'
         groups = GROUPS_KEEPER if is_gk else GROUPS_OUTFIELD
+        mp_val = safe(row.get('matches_played'))
+        ms_val = safe(row.get('matches_started'))
 
         bio = {
             'id': out_id,
@@ -323,9 +341,9 @@ def process_dataframe(df, trend_map, season_index, out_id_fn, season_label_fn):
             'national_team': safe(row.get('national_team')),
             'is_international': bool(safe(row.get('is_international'))),
             'season': season_label,
-            'matches_played': safe(row.get('matches_played')),
-            'matches_started': safe(row.get('matches_started')),
-            'minutes_played': safe(row.get('minutes_played')),
+            'matches_played': mp_val,
+            'matches_started': ms_val,
+            'minutes_played': minutes_played_with_gk_estimate(row, is_gk, mp_val, ms_val),
             'fotmob_rating': safe(row.get('fotmob_rating'), 2),
             'fotmob_rating_pct': safe(row.get('fotmob_rating_pct')),
             'photo_url': f'https://images.fotmob.com/image_resources/playerimages/{pid}.png',
