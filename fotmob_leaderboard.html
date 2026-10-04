@@ -13,6 +13,7 @@
   --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
   --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
   --brand:#ea3323; --brand-ink:#b31c10; --brand-wash:#fdeceb;
+  --hover-wash:#eaf4fd; --hover-ink:#1557b0;
   --pos-fw-bg:#fde7e6; --pos-fw-ink:#b3261e;
   --pos-mf-bg:#e8eefc; --pos-mf-ink:#1f4ea8;
   --pos-df-bg:#e5f4ea; --pos-df-ink:#0f7a4e;
@@ -107,8 +108,9 @@ thead th.sorted.desc .arrows .dn{opacity:1;color:var(--brand-ink)}
 
 /* ── TABLE: BODY LAYER ─────────────────────────────────────────────────── */
 tbody tr{border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s}
-tbody tr:hover{background:var(--brand-wash)}
-tbody tr:hover td.stick{background:var(--brand-wash)}
+tbody tr:hover{background:var(--hover-wash)}
+tbody tr:hover td.stick{background:var(--hover-wash)}
+tbody tr:hover .stat-cell{color:var(--hover-ink)}
 td{padding:9px 12px;font-size:12.5px;text-align:right;white-space:nowrap;color:var(--ink)}
 td.l{text-align:left}
 th.stick,td.stick{position:sticky;background:var(--surface);z-index:1}
@@ -236,21 +238,6 @@ function avatarColor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charC
 function fmtM(v){ if(v==null) return '—'; const a=Math.abs(v);
   if(a>=1e6) return '€'+(v/1e6).toFixed(1)+'M'; if(a>=1e3) return '€'+(v/1e3).toFixed(0)+'K'; return '€'+v; }
 function fmtNum(v,d=0){ return v==null ? '—' : (+v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
-// Sequential cream->orange->red heat ramp (FiveThirtyEight-style magnitude
-// encoding) — intensity alone signals "how extreme", not a good/bad split.
-const HEAT_STOPS = [[0,255,255,255],[25,255,241,214],[50,255,201,140],[75,248,140,74],[100,201,35,25]];
-function heatRgb(p){
-  if(p==null) return null;
-  p = Math.max(0,Math.min(100,p));
-  for(let i=0;i<HEAT_STOPS.length-1;i++){
-    const [t0,r0,g0,b0]=HEAT_STOPS[i], [t1,r1,g1,b1]=HEAT_STOPS[i+1];
-    if(p>=t0 && p<=t1){ const f=(p-t0)/(t1-t0); return [r0+(r1-r0)*f, g0+(g1-g0)*f, b0+(b1-b0)*f]; }
-  }
-  return HEAT_STOPS[HEAT_STOPS.length-1].slice(1);
-}
-function pctBg(p){ const c=heatRgb(p); return c? `rgb(${c[0].toFixed(0)},${c[1].toFixed(0)},${c[2].toFixed(0)})` : 'transparent'; }
-function pctFg(p){ const c=heatRgb(p); if(!c) return 'var(--ink)';
-  const lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255; return lum<0.56 ? '#fff' : 'var(--ink)'; }
 function fmtStat(v,label){
   if(v==null) return '—';
   if(label && label.includes('%')) return v.toFixed(1);
@@ -472,9 +459,8 @@ function renderPage(){
       : `<div class="avatar-ph" style="background:${avCol}">${initials}</div>`;
     const [pbg,pink] = posStyle(p.pos);
     const dynCells = dyn.map(c=>{
-      const {val,pct} = resolveStat(p,`${c.cat}|${c.key}`);
-      const dispPct = pct!=null && c.dir<0 ? 100-pct : pct;
-      return `<td class="tnum stat-cell" style="background:${pctBg(dispPct)};color:${pctFg(dispPct)}">${fmtStat(val,c.label)}</td>`;
+      const {val} = resolveStat(p,`${c.cat}|${c.key}`);
+      return `<td class="tnum stat-cell">${fmtStat(val,c.label)}</td>`;
     }).join('');
     return `<tr onclick="location.href='fotmob_player.html?id=${p.id}'">
       <td class="rank stick mono">${start+i+1}</td>
@@ -483,7 +469,7 @@ function renderPage(){
       <td class="l lgtag">${p.league||'—'}</td>
       <td class="tnum mono">${fmtNum(p.age)}</td>
       <td class="tnum mono">${fmtNum(p.mp)}</td>
-      <td class="tnum stat-cell" style="background:${pctBg(p.rating_pct)};color:${pctFg(p.rating_pct)}">${p.rating!=null?p.rating.toFixed(2):'—'}</td>
+      <td class="tnum stat-cell">${p.rating!=null?p.rating.toFixed(2):'—'}</td>
       ${dynCells}
       <td class="mv-cell">${fmtM(p.mv)}</td>
       <td class="trend-cell">${sparkSvg(p.trend)}</td>
