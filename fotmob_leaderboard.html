@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Player Search</title>
+<title>xStats &mdash; Player Search</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -29,19 +29,24 @@ a{color:inherit;text-decoration:none}
 .mono{font-variant-numeric:tabular-nums}
 .tnum{font-variant-numeric:tabular-nums}
 
-/* ── PAGE HEADER ───────────────────────────────────────────────────────── */
-.pagehead{max-width:1440px;margin:0 auto;padding:28px 28px 18px}
+/* ── MASTHEAD ──────────────────────────────────────────────────────────── */
+.masthead{background-color:#121212;
+  background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand);position:relative}
+.masthead::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,0.3) 100%)}
+.pagehead{max-width:1440px;margin:0 auto;padding:22px 28px 56px;position:relative}
 .pagehead-top{display:flex;align-items:center;justify-content:space-between;gap:16px}
-.brand{display:flex;align-items:center;gap:9px}
-.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:17px;letter-spacing:-0.01em;color:var(--ink)}
-.brand-dot{width:7px;height:7px;border-radius:50%;background:var(--brand)}
-.brand-sub{font-family:'Roboto',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
-.pagehead-count{font-family:'Roboto',sans-serif;font-size:11.5px;font-weight:600;color:var(--muted)}
-.pagehead h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;letter-spacing:-0.02em;margin-top:14px;color:var(--ink)}
-.pagehead p{font-size:13px;color:var(--ink-2);margin-top:5px;max-width:580px;line-height:1.5}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-family:'Roboto',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.pagehead-count{font-family:'Roboto',sans-serif;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.4)}
+.pagehead h1{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;letter-spacing:-0.02em;margin-top:16px;color:#fff}
+.pagehead p{font-size:13px;color:rgba(255,255,255,0.6);margin-top:6px;max-width:580px;line-height:1.5}
 
 /* ── TOOLBAR LAYER ─────────────────────────────────────────────────────── */
-.app{max-width:1440px;margin:0 auto;padding:0 28px 60px}
+.app{max-width:1440px;margin:-34px auto 0;padding:0 28px 60px;position:relative;z-index:2}
 .card{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card)}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
 .search-box{position:relative;flex:1;min-width:230px}
@@ -157,17 +162,18 @@ th.pcell-col{left:34px}
 </head>
 <body>
 
-<div class="pagehead">
-  <div class="pagehead-top">
-    <div class="brand">
-      <span class="brand-dot"></span>
-      <span class="brand-mark">Fotmob</span>
-      <span class="brand-sub">Player Database</span>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="pagehead-top">
+      <div class="brand">
+        <span class="brand-mark"><span class="x">x</span>Stats</span>
+        <span class="brand-sub">Player Database</span>
+      </div>
+      <div class="pagehead-count" id="count-badge"></div>
     </div>
-    <div class="pagehead-count" id="count-badge"></div>
+    <h1>Search every player</h1>
+    <p id="pagehead-desc">Players across 28 leagues and two seasons, built from full-season tracking data. Filter by position, league, season or minutes played, switch stat categories, then open a player for the full scouting report.</p>
   </div>
-  <h1>Search every player</h1>
-  <p id="pagehead-desc">Players across 28 leagues and two seasons, built from full-season Fotmob tracking data. Filter by position, league, season or minutes played, switch stat categories, then open a player for the full scouting report.</p>
 </div>
 
 <div class="app">
@@ -209,7 +215,7 @@ th.pcell-col{left:34px}
     <div class="tbl-scroll">
       <table>
         <thead><tr id="thead-row"></tr></thead>
-        <tbody id="tbody"><tr><td colspan="12" class="loading-row">Loading 15,142 players…</td></tr></tbody>
+        <tbody id="tbody"><tr><td colspan="12" class="loading-row">Loading players…</td></tr></tbody>
       </table>
     </div>
     <div class="pager" id="pager"></div>
@@ -383,7 +389,7 @@ Promise.all([
 ]).then(([d,cats])=>{
   DATA=d; CATEGORIES=cats;
   $('count-badge').textContent = d.length.toLocaleString()+' players';
-  $('pagehead-desc').textContent = `${d.length.toLocaleString()} player-seasons across 28 leagues, built from full-season Fotmob tracking data. Filter by position, league, season or minutes played, switch stat categories, then open a player for the full scouting report.`;
+  $('pagehead-desc').textContent = `${d.length.toLocaleString()} player-seasons across 28 leagues, built from full-season tracking data. Filter by position, league, season or minutes played, switch stat categories, then open a player for the full scouting report.`;
   const leagues=[...new Set(d.map(p=>p.league).filter(Boolean))].sort();
   $('league-sel').innerHTML += leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
   const seasons=[...new Set(d.map(p=>p.season).filter(Boolean))].sort().reverse();
