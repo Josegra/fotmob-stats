@@ -332,7 +332,7 @@ const TABS = {
   },
   sofascore: {
     label:'Sofascore', dataUrl:'data/sofascore_index.json', catUrl:'data/sofascore_categories.json',
-    linkFn:p=>`sofascore_player.html?id=${p.id}`, posField:'pos_key', hasGranular:false, hasSeason:false, hasTrend:false,
+    linkFn:p=>`sofascore_player.html?id=${p.id}`, posField:'pos_key', hasGranular:false, hasSeason:true, hasTrend:false,
     title:'Search every player — Sofascore', desc:n=>`${n.toLocaleString()} players from Sofascore's own tracking data — 5-axis skill ratings (Attacking/Creativity/Technique/Defending/Tactical), physical metrics and match rating. Filter by position, league or minutes played, then open a player for the full breakdown.`,
     overview:[
       {cat:'Attacking',key:'goals',label:'G'},{cat:'Attacking',key:'expectedGoals',label:'xG'},
