@@ -204,7 +204,31 @@ canvas.pitch-cv{width:100%;display:block;border-radius:4px}
 .shot-legend .lg-dot{border-radius:50%;background:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.55);flex-shrink:0}
 .shot-legend .lg-sep{width:1px;height:14px;background:rgba(255,255,255,0.15)}
 
+/* ─── SOFASCORE ENRICHMENT CARD ───────────────────────────────────────── */
+.ss-card .card-hd{border-bottom-color:#b4005f}
+.ss-grid{display:grid;grid-template-columns:260px 1fr;gap:0}
+.ss-radar-box{padding:18px;border-right:1px solid var(--line-2);display:flex;align-items:center;justify-content:center}
+.ss-rating-row{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line-2);background:var(--surface-2)}
+.ss-rating-tile{text-align:center}
+.ss-rating-tile .v{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:#b4005f}
+.ss-rating-tile .l{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px}
+.ss-vs{font-size:11px;color:var(--muted);font-weight:700}
+.ss-body{padding:16px 20px}
+.ss-sub-title{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+.ss-phys-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-2)}
+.ss-phys-row:last-child{border-bottom:none}
+.ss-phys-lbl{font-size:11px;color:var(--ink-2);width:150px;flex-shrink:0}
+.ss-phys-track{flex:1;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.ss-phys-fill{height:100%;border-radius:3px;background:#e6007a}
+.ss-phys-val{font-size:11.5px;font-weight:700;color:var(--ink);width:70px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.ss-extra-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1px;background:var(--line-2);margin-top:14px;border:1px solid var(--line-2);border-radius:4px;overflow:hidden}
+.ss-extra-tile{background:#fff;padding:10px 12px}
+.ss-extra-tile .v{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--ink)}
+.ss-extra-tile .l{font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+
 @media(max-width:820px){
+  .ss-grid{grid-template-columns:1fr}
+  .ss-radar-box{border-right:none;border-bottom:1px solid var(--line-2)}
   .map-grid{grid-template-columns:1fr}
   .map-side{border-left:none;border-top:1px solid var(--line-2)}
   .hero-stats{margin-left:0;width:100%}
@@ -231,6 +255,7 @@ canvas.pitch-cv{width:100%;display:block;border-radius:4px}
 <div class="subnav" id="subnav" style="display:none">
   <a href="#sec-value">Market Value</a>
   <a href="#sec-scout">Scouting Report</a>
+  <a href="#sec-sofascore" id="subnav-ss" style="display:none">Sofascore</a>
   <a href="#sec-heat">Heat Map</a>
   <a href="#sec-shots">Shot Map</a>
 </div>
@@ -367,6 +392,29 @@ function render(){
       <div class="pct-grid" id="pct-rows"></div>
     </div>
 
+    ${PLAYER.sofascore ? `
+    <div id="sec-sofascore" class="card ss-card">
+      <div class="card-hd">
+        <div class="card-title">Sofascore</div>
+        <div class="card-sub">Cross-matched via the entity-resolution maestro &mdash; rating, physical tracking and stats Fotmob doesn't track</div>
+      </div>
+      <div class="ss-rating-row">
+        <div class="ss-rating-tile"><div class="v">${b.fotmob_rating ?? '—'}</div><div class="l">Fotmob Rating</div></div>
+        <div class="ss-vs">vs</div>
+        <div class="ss-rating-tile"><div class="v">${PLAYER.sofascore.rating ?? '—'}</div><div class="l">Sofascore Rating</div></div>
+        ${PLAYER.sofascore.height && PLAYER.sofascore.height!==b.height ? `<div style="margin-left:auto" class="chip">Sofascore Height <b>${PLAYER.sofascore.height}</b></div>` : ''}
+      </div>
+      <div class="ss-grid">
+        <div class="ss-radar-box" id="ss-radar-box"></div>
+        <div class="ss-body">
+          <div class="ss-sub-title">Physical (Sofascore tracking)</div>
+          <div id="ss-physical"></div>
+          <div class="ss-sub-title" style="margin-top:16px">Not tracked by Fotmob</div>
+          <div class="ss-extra-grid" id="ss-extra"></div>
+        </div>
+      </div>
+    </div>` : ''}
+
     <div id="sec-heat" class="card">
       <div class="card-hd">
         <div class="card-title">Heat Map</div>
@@ -397,6 +445,7 @@ function render(){
 
   renderMarketValue();
   renderGroupTabs();
+  if(PLAYER.sofascore){ $('subnav-ss').style.display=''; renderSofascore(); }
   renderHeat();
   renderShotFilters();
   drawShots();
@@ -579,6 +628,52 @@ function renderPctRows(){
       <div class="ring-detail">${m.val!=null?fmtNum(m.val,m.val%1?1:0):'—'}${m.per90!=null?` · <b>${fmtNum(m.per90,2)}</b>/90`:''}</div>
     </div>`;
   }).join('');
+}
+
+/* ══════════════ SOFASCORE ENRICHMENT ══════════════ */
+const SS_PHYS_LABELS = {topSpeed:'Top Speed (km/h)', kilometersCovered:'Distance Covered (km)', numberOfSprints:'Sprints'};
+function renderSofascore(){
+  const ss = PLAYER.sofascore;
+  const axes = [['att','ATT'],['cre','CRE'],['tec','TEC'],['def','DEF'],['tac','TAC']];
+  const r = ss.radar || {};
+  const vals = axes.map(([k])=>r[k]==null?0:r[k]);
+  const SIZE=180, CX=SIZE/2, CY=SIZE/2, R=62, N=5;
+  const angle = i => -Math.PI/2 + i*(2*Math.PI/N);
+  const pt = (i,frac) => [CX + Math.cos(angle(i))*R*frac, CY + Math.sin(angle(i))*R*frac];
+  let grid = '';
+  [0.33,0.66,1].forEach(frac=>{
+    grid += `<polygon points="${axes.map((_,i)=>pt(i,frac).join(',')).join(' ')}" fill="none" stroke="var(--line-2)" stroke-width="1"/>`;
+  });
+  axes.forEach((_,i)=>{ const [x,y]=pt(i,1); grid += `<line x1="${CX}" y1="${CY}" x2="${x}" y2="${y}" stroke="var(--line-2)" stroke-width="1"/>`; });
+  const dataPts = axes.map((_,i)=>pt(i, Math.max(0,Math.min(100,vals[i]))/100));
+  const labels = axes.map(([k,lbl],i)=>{
+    const [x,y]=pt(i,1.22);
+    const anchor = Math.abs(Math.cos(angle(i)))<0.3 ? 'middle' : (Math.cos(angle(i))>0?'start':'end');
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle" font-size="9.5" font-weight="700" fill="var(--ink-2)" font-family="Roboto">${lbl}</text>`;
+  }).join('');
+  $('ss-radar-box').innerHTML = vals.some(v=>v>0) ? `
+    <svg width="${SIZE+50}" height="${SIZE+20}" viewBox="-25 -10 ${SIZE+50} ${SIZE+20}">
+      ${grid}
+      <polygon points="${dataPts.map(p=>p.join(',')).join(' ')}" fill="#e6007a" fill-opacity="0.22" stroke="#b4005f" stroke-width="2" stroke-linejoin="round"/>
+      ${dataPts.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3" fill="#b4005f" stroke="#fff" stroke-width="1.3"/>`).join('')}
+      ${labels}
+    </svg>` : `<div class="empty-state" style="padding:20px">No radar data</div>`;
+
+  const phys = ss.physical || {};
+  const physKeys = Object.keys(SS_PHYS_LABELS).filter(k=>phys[k]);
+  $('ss-physical').innerHTML = physKeys.length ? physKeys.map(k=>{
+    const m = phys[k]; const pct = m.pct!=null ? m.pct : 0;
+    return `<div class="ss-phys-row">
+      <div class="ss-phys-lbl">${SS_PHYS_LABELS[k]}</div>
+      <div class="ss-phys-track"><div class="ss-phys-fill" style="width:${pct}%"></div></div>
+      <div class="ss-phys-val">${fmtNum(m.val,1)}${m.pct!=null?` · ${Math.round(m.pct)}pct`:''}</div>
+    </div>`;
+  }).join('') : `<div class="empty-state" style="padding:16px">No physical tracking data</div>`;
+
+  const extra = (ss.extra_stats||[]).filter(s=>s.val);
+  $('ss-extra').innerHTML = extra.length ? extra.map(s=>`
+    <div class="ss-extra-tile"><div class="v">${fmtNum(s.val, s.val%1?2:0)}</div><div class="l">${s.label}</div></div>
+  `).join('') : `<div class="empty-state" style="padding:16px;grid-column:1/-1">No non-zero values this season</div>`;
 }
 
 /* ══════════════ HEAT MAP ══════════════ */
@@ -832,8 +927,8 @@ function makeShotTip(){
 
 /* ══════════════ SCROLL SPY ══════════════ */
 function initScrollSpy(){
-  const secs=['sec-value','sec-scout','sec-heat','sec-shots'].map(id=>$(id)).filter(Boolean);
-  const links=[...document.querySelectorAll('.subnav a')];
+  const secs=['sec-value','sec-scout','sec-sofascore','sec-heat','sec-shots'].map(id=>$(id)).filter(Boolean);
+  const links=secs.map(s=>document.querySelector(`.subnav a[href="#${s.id}"]`));
   window.addEventListener('scroll',debounce(()=>{
     let cur=0;
     secs.forEach((s,i)=>{ if(s.getBoundingClientRect().top<140) cur=i; });

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Sofascore Player Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-2:#ececea;
+  --brand:#e6007a; --brand-ink:#b4005f; --brand-wash:#fdeaf4;
+  --pos-fw:#e34948; --pos-mf:#2a78d6; --pos-df:#0e7c53; --pos-gk:#c98500;
+  --seq-100:#f6cfe4; --seq-250:#ef96c7; --seq-400:#e5579e; --seq-550:#ab1c69; --seq-700:#6b0d40;
+  --status-good:#1a8a4a; --status-crit:#d6362a; --status-neutral:#9aa0a2;
+  --shadow-1:0 1px 2px rgba(17,17,17,0.05), 0 1px 1px rgba(17,17,17,0.04);
+  --shadow-2:0 10px 30px -14px rgba(0,0,0,0.35);
+  --radius:5px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.mono{font-variant-numeric:tabular-nums}
+.tnum{font-variant-numeric:tabular-nums}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#d7dad5;border-radius:4px}
+
+.nav{position:sticky;top:0;z-index:200;background:#0b0e0c;color:#fff;
+  display:flex;align-items:center;gap:16px;padding:0 24px;height:52px}
+.nav-mark{font-family:'Barlow Condensed',sans-serif;display:flex;align-items:baseline;gap:7px;font-weight:900;font-size:16px;letter-spacing:-0.02em;flex-shrink:0;color:#fff}
+.nav-mark .x{color:var(--brand)}
+.nav-mark .sub{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.nav-back{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:rgba(255,255,255,0.7);
+  padding:6px 12px;border:1px solid rgba(255,255,255,0.18);border-radius:4px;cursor:pointer;transition:all .15s;background:transparent;flex-shrink:0}
+.nav-back:hover{border-color:rgba(255,255,255,0.4);color:#fff}
+.nav-search{flex:1;max-width:400px;position:relative;margin-left:auto}
+.nav-search input{width:100%;height:34px;border:1px solid rgba(255,255,255,0.18);border-radius:4px;padding:0 14px 0 34px;
+  font:inherit;font-size:13px;background:rgba(255,255,255,0.06);transition:all .15s;color:#fff}
+.nav-search input::placeholder{color:rgba(255,255,255,0.4)}
+.nav-search input:focus{outline:none;border-color:var(--brand);background:rgba(255,255,255,0.1)}
+.nav-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:rgba(255,255,255,0.4);pointer-events:none}
+.sr-pop{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--line);
+  border-radius:4px;box-shadow:var(--shadow-2);max-height:360px;overflow-y:auto;display:none;z-index:50}
+.sr-pop.show{display:block}
+.sr-row{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;transition:background .1s}
+.sr-row:hover,.sr-row.sel{background:var(--surface-2)}
+.sr-name{font-size:12.5px;font-weight:600;color:var(--ink)}
+.sr-sub{font-size:11px;color:var(--muted)}
+.sr-mv{margin-left:auto;font-size:11px;font-weight:700;color:var(--brand-ink)}
+
+.subnav{position:sticky;top:56px;z-index:150;background:rgba(243,244,242,0.94);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);display:flex;gap:2px;padding:0 24px;overflow-x:auto}
+.subnav a{font-size:11.5px;font-weight:700;letter-spacing:0.02em;color:var(--ink-2);padding:12px 14px 10px;
+  border-bottom:2.5px solid transparent;white-space:nowrap;transition:all .15s}
+.subnav a:hover{color:var(--ink)}
+.subnav a.on{color:var(--brand-ink);border-bottom-color:var(--brand)}
+
+.wrap{max-width:1180px;margin:0 auto;padding:20px 24px 80px}
+.loading,.notfound{padding:120px 24px;text-align:center;color:var(--muted);font-size:13px}
+
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-1);
+  padding:26px 28px;display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+.hero-photo-wrap{position:relative;flex-shrink:0}
+.hero-photo{width:112px;height:112px;border-radius:6px;object-fit:cover;background:var(--surface-2);
+  border:1px solid var(--line);display:block}
+.hero-photo-ph{width:112px;height:112px;border-radius:6px;background:linear-gradient(135deg,var(--brand-wash),#fff);
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;
+  color:var(--brand-ink)}
+.pos-dot{position:absolute;bottom:-5px;right:-5px;width:28px;height:18px;border-radius:3px;display:flex;
+  align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;border:2.5px solid var(--surface)}
+.hero-info{flex:1;min-width:240px}
+.hero-name{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.02em;line-height:1.08;margin-bottom:6px}
+.hero-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:13px;color:var(--ink-2)}
+.hero-meta b{color:var(--ink);font-weight:600}
+.badge{display:inline-flex;align-items:center;padding:2.5px 8px;border-radius:3px;font-size:10.5px;font-weight:700;
+  letter-spacing:0.02em;color:#fff}
+.chip-row{display:flex;gap:7px;flex-wrap:wrap}
+.chip{background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:5px 10px;font-size:11px;color:var(--ink-2)}
+.chip b{color:var(--ink);font-weight:700}
+
+.hero-stats{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap;flex-shrink:0}
+.hstat{background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:12px 18px;text-align:center;min-width:92px}
+.hstat-lbl{font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.hstat-val{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.01em;color:var(--ink)}
+.hstat-sub{font-size:10px;color:var(--muted);margin-top:3px}
+.hstat.rating .hstat-val{color:var(--brand-ink)}
+.ring{width:46px;height:46px;margin:0 auto 4px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-1);
+  margin-bottom:14px;overflow:hidden;scroll-margin-top:118px}
+.card-hd{padding:14px 20px;border-bottom:2px solid var(--ink);display:flex;align-items:baseline;justify-content:space-between;
+  flex-wrap:wrap;gap:10px}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:10.5px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase}
+.card-sub{font-size:11px;color:var(--muted)}
+.card-body{padding:18px 20px}
+.empty-state{padding:48px 20px;text-align:center;color:var(--muted);font-size:12.5px}
+
+/* ─── RADAR CHART ─────────────────────────────────────────────────────── */
+.radar-wrap{display:flex;gap:28px;align-items:center;flex-wrap:wrap;justify-content:center;padding:10px 0}
+.radar-svg{flex-shrink:0}
+.radar-legend{display:flex;flex-direction:column;gap:10px;min-width:180px}
+.rl-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:var(--surface-2);border-radius:4px;border:1px solid var(--line)}
+.rl-lbl{font-size:12px;font-weight:700;color:var(--ink-2)}
+.rl-val{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--brand-ink)}
+
+/* ─── PERCENTILE EXPLORER (ring grid) ─────────────────────────────────── */
+.grp-tabs{display:flex;border:1px solid var(--line-strong,#c7cac5);border-radius:4px;overflow:hidden;
+  width:fit-content;margin:16px 20px 0;flex-wrap:wrap}
+.gtab{background:#fff;border:none;border-right:1px solid var(--line-strong,#c7cac5);padding:8px 15px;font-size:10.5px;
+  font-weight:700;letter-spacing:0.02em;color:var(--ink-2);cursor:pointer;transition:all .1s;font-family:inherit}
+.gtab:last-child{border-right:none}
+.gtab:hover{background:var(--surface-2);color:var(--ink)}
+.gtab.on{background:var(--ink);color:#fff}
+.pct-legend{display:flex;align-items:center;gap:7px;font-size:9.5px;font-weight:600;color:var(--muted);padding:16px 20px 0;
+  letter-spacing:0.03em;text-transform:uppercase}
+.pct-legend .lg-bar{width:120px;height:5px;border-radius:3px;background:linear-gradient(90deg,#ffffff,#ef96c7,#ab1c69)}
+.pct-grid{padding:14px 20px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:4px 2px}
+.ring-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 6px 12px;
+  border-radius:4px;transition:background .12s}
+.ring-card:hover{background:var(--surface-2)}
+.ring-svg{width:84px;height:84px;position:relative}
+.ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.ring-num b{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums}
+.ring-num span{font-size:8px;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-top:2px}
+.ring-label{font-size:11px;font-weight:700;color:var(--ink);margin-top:9px;line-height:1.2}
+.ring-detail{font-size:10px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.ring-detail b{color:var(--ink-2);font-weight:700}
+
+.xlink-bar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--brand-wash);border-bottom:1px solid var(--line);font-size:12px}
+.xlink-bar a{color:var(--brand-ink);font-weight:700;text-decoration:underline}
+
+@media(max-width:820px){
+  .hero-stats{margin-left:0;width:100%}
+  .radar-wrap{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-mark"><span><span class="x">x</span>Stats</span><span class="sub">Sofascore Report</span></div>
+  <div class="nav-back" onclick="history.length>1?history.back():location.href='fotmob_leaderboard.html'">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    Back
+  </div>
+  <div class="nav-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="search-input" type="text" placeholder="Search a player…" autocomplete="off">
+    <div class="sr-pop" id="search-pop"></div>
+  </div>
+</nav>
+
+<div class="subnav" id="subnav" style="display:none">
+  <a href="#sec-radar">Radar Attributes</a>
+  <a href="#sec-scout">Scouting Report</a>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="loading" id="loading">Loading player…</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const qs = new URLSearchParams(location.search);
+const PID = qs.get('id');
+
+const POS_COLOR = {F:'var(--pos-fw)', D:'var(--pos-df)', M:'var(--pos-mf)', G:'var(--pos-gk)'};
+function posColor(posKey){ return POS_COLOR[posKey] || 'var(--pos-mf)'; }
+function posAbbr(posKey){ return {G:'GK',D:'DF',M:'MF',F:'FW'}[posKey] || '—'; }
+function fmtM(v){
+  if(v==null) return '—';
+  const a=Math.abs(v);
+  if(a>=1e9) return '€'+(v/1e9).toFixed(2)+'B';
+  if(a>=1e6) return '€'+(v/1e6).toFixed(1)+'M';
+  if(a>=1e3) return '€'+(v/1e3).toFixed(0)+'K';
+  return '€'+v;
+}
+function fmtNum(v,d=0){ return v==null ? '—' : (+v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+const HEAT_STOPS_FG = [[0,90,90,90],[35,214,150,180],[65,229,87,158],[100,171,28,105]];
+function heatRgbFg(p){
+  p = Math.max(0,Math.min(100,p));
+  for(let i=0;i<HEAT_STOPS_FG.length-1;i++){
+    const [t0,r0,g0,b0]=HEAT_STOPS_FG[i], [t1,r1,g1,b1]=HEAT_STOPS_FG[i+1];
+    if(p>=t0 && p<=t1){ const f=(p-t0)/(t1-t0); return [r0+(r1-r0)*f, g0+(g1-g0)*f, b0+(b1-b0)*f]; }
+  }
+  return HEAT_STOPS_FG[HEAT_STOPS_FG.length-1].slice(1);
+}
+function pctColor(p){
+  if(p==null) return 'var(--status-neutral)';
+  const c=heatRgbFg(p); return `rgb(${c[0].toFixed(0)},${c[1].toFixed(0)},${c[2].toFixed(0)})`;
+}
+
+let PLAYER=null, ACTIVE_GROUP=0;
+
+fetch(`data/sofascore/${PID}.json`)
+  .then(r=>{ if(!r.ok) throw 0; return r.json(); })
+  .then(d=>{ PLAYER=d; render(); })
+  .catch(()=>{ $('wrap').innerHTML = `<div class="notfound">Player not found. <a href="fotmob_leaderboard.html" style="color:var(--brand);font-weight:700">Back to search →</a></div>`; });
+
+function render(){
+  const b = PLAYER.bio;
+  document.title = `${b.name} — xStats Sofascore`;
+  $('subnav').style.display='flex';
+
+  const initials = (b.name||'?').split(' ').map(s=>s[0]).filter(Boolean).slice(-2).join('');
+  const photoHtml = `<img class="hero-photo" src="${b.photo_url}" onerror="this.outerHTML='<div class=\\'hero-photo-ph\\'>${initials}</div>'">`;
+
+  $('wrap').innerHTML = `
+    <div class="hero">
+      <div class="hero-photo-wrap">
+        ${photoHtml}
+        <div class="pos-dot" style="background:${posColor(b.position_key)}">${posAbbr(b.position_key)}</div>
+      </div>
+      <div class="hero-info">
+        <div class="hero-name">${b.name}</div>
+        <div class="hero-meta">
+          <span class="badge" style="background:${posColor(b.position_key)}">${b.position||'—'}</span>
+          <span>${b.team||'Free Agent'}</span>·<span>${b.league||''}</span>
+          ${b.is_international?`<span>· <b>${b.national_team||''}</b></span>`:''}
+        </div>
+        <div class="chip-row">
+          <div class="chip">Age <b>${fmtNum(b.age)}</b></div>
+          <div class="chip">Height <b>${b.height||'—'}</b></div>
+          <div class="chip">Foot <b>${b.foot||'—'}</b></div>
+          <div class="chip">Nationality <b>${b.country||'—'}</b></div>
+          ${b.shirt?`<div class="chip">№ <b>${fmtNum(b.shirt)}</b></div>`:''}
+          ${b.contract_end?`<div class="chip">Contract <b>${b.contract_end}</b></div>`:''}
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat rating">
+          <svg class="ring" viewBox="0 0 36 36">
+            <path d="M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32" fill="none" stroke="var(--line)" stroke-width="3"/>
+            <path d="M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32" fill="none" stroke="${pctColor(b.sofascore_rating_pct)}"
+              stroke-width="3" stroke-dasharray="${((b.sofascore_rating_pct||0)/100*100.5).toFixed(1)} 200" stroke-linecap="round"/>
+          </svg>
+          <div class="hstat-lbl">Rating</div>
+          <div class="hstat-val">${b.sofascore_rating ?? '—'}</div>
+          <div class="hstat-sub">${b.sofascore_rating_pct!=null?Math.round(b.sofascore_rating_pct)+'th pct':''}</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-lbl">Market Value</div>
+          <div class="hstat-val">${fmtM(b.market_value_eur)}</div>
+          <div class="hstat-sub">${b.contract_end?'until '+b.contract_end.slice(0,4):''}</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-lbl">${b.season||'Season'}</div>
+          <div class="hstat-val" style="font-size:16px">${fmtNum(b.matches_played)} <span style="font-size:10px;color:var(--muted);font-weight:600">GP</span></div>
+          <div class="hstat-sub">${fmtNum(b.minutes_played)} mins</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="sec-radar" class="card">
+      <div class="card-hd">
+        <div class="card-title">Radar Attributes</div>
+        <div class="card-sub">Sofascore's 5-axis skill rating (0&ndash;100), unique to this data source</div>
+      </div>
+      <div class="card-body"><div class="radar-wrap" id="radar-wrap"></div></div>
+    </div>
+
+    <div id="sec-scout" class="card">
+      <div class="card-hd">
+        <div class="card-title">Scouting Report</div>
+        <div class="card-sub">Percentile vs. ${b.position||'position'} across all tracked leagues</div>
+      </div>
+      <div class="grp-tabs" id="grp-tabs"></div>
+      <div class="pct-legend"><span>Below Avg</span><div class="lg-bar"></div><span>Elite</span></div>
+      <div class="pct-grid" id="pct-rows"></div>
+    </div>
+  `;
+
+  renderRadar();
+  renderGroupTabs();
+  initScrollSpy();
+  window.addEventListener('resize', ()=>{});
+}
+
+/* ══════════════ RADAR CHART ══════════════ */
+function renderRadar(){
+  const r = PLAYER.bio.radar || {};
+  const axes = [['att','Attacking'],['cre','Creativity'],['tec','Technique'],['def','Defending'],['tac','Tactical']];
+  const vals = axes.map(([k])=>r[k]==null?0:r[k]);
+  const hasAny = vals.some(v=>v>0);
+  if(!hasAny){
+    $('radar-wrap').innerHTML = `<div class="empty-state">No radar attribute data for this player.</div>`;
+    return;
+  }
+  const SIZE=280, CX=SIZE/2, CY=SIZE/2, R=100, N=5;
+  const angle = i => -Math.PI/2 + i*(2*Math.PI/N);
+  const pt = (i,frac) => [CX + Math.cos(angle(i))*R*frac, CY + Math.sin(angle(i))*R*frac];
+  let grid = '';
+  [0.25,0.5,0.75,1].forEach(frac=>{
+    const pts = axes.map((_,i)=>pt(i,frac).join(',')).join(' ');
+    grid += `<polygon points="${pts}" fill="none" stroke="var(--line-2)" stroke-width="1"/>`;
+  });
+  axes.forEach((_,i)=>{
+    const [x,y]=pt(i,1);
+    grid += `<line x1="${CX}" y1="${CY}" x2="${x}" y2="${y}" stroke="var(--line-2)" stroke-width="1"/>`;
+  });
+  const dataPts = axes.map(([k],i)=>pt(i, Math.max(0,Math.min(100,vals[i]))/100));
+  const dataPoly = dataPts.map(p=>p.join(',')).join(' ');
+  const labels = axes.map(([k,lbl],i)=>{
+    const [x,y]=pt(i,1.24);
+    const anchor = Math.abs(Math.cos(angle(i)))<0.3 ? 'middle' : (Math.cos(angle(i))>0?'start':'end');
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle" font-size="11" font-weight="700" fill="var(--ink-2)" font-family="Roboto">${lbl}</text>`;
+  }).join('');
+  const dots = dataPts.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3.5" fill="var(--brand-ink)" stroke="#fff" stroke-width="1.5"/>`).join('');
+
+  $('radar-wrap').innerHTML = `
+    <svg class="radar-svg" width="${SIZE+60}" height="${SIZE+30}" viewBox="-30 -15 ${SIZE+60} ${SIZE+30}">
+      ${grid}
+      <polygon points="${dataPoly}" fill="var(--brand)" fill-opacity="0.22" stroke="var(--brand-ink)" stroke-width="2" stroke-linejoin="round"/>
+      ${dots}
+      ${labels}
+    </svg>
+    <div class="radar-legend">
+      ${axes.map(([k,lbl],i)=>`<div class="rl-row"><span class="rl-lbl">${lbl}</span><span class="rl-val">${vals[i]||'—'}</span></div>`).join('')}
+    </div>
+  `;
+}
+
+/* ══════════════ SCOUTING REPORT (percentiles) ══════════════ */
+function renderGroupTabs(){
+  const groups = PLAYER.stats;
+  $('grp-tabs').innerHTML = groups.map((g,i)=>`<button class="gtab ${i===ACTIVE_GROUP?'on':''}" onclick="setGroup(${i})">${g.group}</button>`).join('');
+  renderPctRows();
+}
+function setGroup(i){ ACTIVE_GROUP=i; document.querySelectorAll('.gtab').forEach((b,bi)=>b.classList.toggle('on',bi===i)); renderPctRows(); }
+function renderPctRows(){
+  const g = PLAYER.stats[ACTIVE_GROUP]; if(!g){ $('pct-rows').innerHTML=''; return; }
+  const R=36, C=2*Math.PI*R;
+  $('pct-rows').innerHTML = g.metrics.map(m=>{
+    const p = m.pct!=null ? (m.dir<0 ? 100-m.pct : m.pct) : null;
+    const col = pctColor(p);
+    const dash = p!=null ? (p/100*C) : 0;
+    return `<div class="ring-card">
+      <div class="ring-svg">
+        <svg viewBox="0 0 84 84" width="84" height="84">
+          <circle cx="42" cy="42" r="${R}" fill="none" stroke="var(--line-2)" stroke-width="7"/>
+          ${p!=null?`<circle cx="42" cy="42" r="${R}" fill="none" stroke="${col}" stroke-width="7"
+            stroke-dasharray="${dash.toFixed(1)} ${C.toFixed(1)}" stroke-linecap="round"
+            transform="rotate(-90 42 42)"/>`:''}
+        </svg>
+        <div class="ring-num"><b style="color:${p!=null?col:'var(--muted)'}">${p!=null?Math.round(p):'—'}</b><span>${p!=null?'pct':'n/a'}</span></div>
+      </div>
+      <div class="ring-label">${m.label}</div>
+      <div class="ring-detail">${m.val!=null?fmtNum(m.val,m.val%1?1:0):'—'}${m.per90!=null?` · <b>${fmtNum(m.per90,2)}</b>/90`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════ SCROLL SPY ══════════════ */
+function initScrollSpy(){
+  const secs=['sec-radar','sec-scout'].map(id=>$(id)).filter(Boolean);
+  const links=[...document.querySelectorAll('.subnav a')];
+  window.addEventListener('scroll',()=>{
+    let cur=0;
+    secs.forEach((s,i)=>{ if(s.getBoundingClientRect().top<140) cur=i; });
+    links.forEach((l,i)=>l.classList.toggle('on',i===cur));
+  });
+}
+
+/* ══════════════ SEARCH ══════════════ */
+let SEARCH_IDX=null;
+function loadSearchIdx(){ if(SEARCH_IDX) return Promise.resolve(SEARCH_IDX);
+  return fetch('data/sofascore_index.json').then(r=>r.json()).then(d=>{ SEARCH_IDX=d; return d; }); }
+const inp=$('search-input'), pop=$('search-pop');
+inp.addEventListener('focus',()=>loadSearchIdx());
+inp.addEventListener('input',()=>{
+  const q=inp.value.trim().toLowerCase();
+  if(q.length<2){ pop.classList.remove('show'); return; }
+  loadSearchIdx().then(idx=>{
+    const res = idx.filter(p=>p.name && p.name.toLowerCase().includes(q)).slice(0,10);
+    pop.innerHTML = res.map(p=>`<div class="sr-row" onclick="location.href='sofascore_player.html?id=${p.id}'">
+        <div><div class="sr-name">${p.name}</div><div class="sr-sub">${p.team||''} · ${p.league||''} · ${p.pos||''}</div></div>
+        <div class="sr-mv">${fmtM(p.mv)}</div>
+      </div>`).join('') || `<div class="sr-row" style="color:var(--muted)">No players found</div>`;
+    pop.classList.add('show');
+  });
+});
+document.addEventListener('click',e=>{ if(!e.target.closest('.nav-search')) pop.classList.remove('show'); });
+</script>
+</body>
+</html>

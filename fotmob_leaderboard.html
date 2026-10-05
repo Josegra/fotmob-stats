@@ -13,6 +13,8 @@
   --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
   --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
   --brand:#ea3323; --brand-ink:#b31c10; --brand-wash:#fdeceb;
+  --ss-brand:#e6007a; --ss-ink:#b4005f;
+  --mg-brand:#7a3fd1; --mg-ink:#5f2eb0;
   --hover-wash:#eaf4fd; --hover-ink:#1557b0;
   --pos-fw-bg:#fde7e6; --pos-fw-ink:#b3261e;
   --pos-mf-bg:#e8eefc; --pos-mf-ink:#1f4ea8;
@@ -32,18 +34,26 @@ a{color:inherit;text-decoration:none}
 /* ── MASTHEAD ──────────────────────────────────────────────────────────── */
 .masthead{background-color:#121212;
   background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
-  background-size:18px 18px;border-bottom:3px solid var(--brand);position:relative}
+  background-size:18px 18px;border-bottom:3px solid var(--brand);position:relative;transition:border-color .2s}
 .masthead::after{content:'';position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,0.3) 100%)}
 .pagehead{max-width:1440px;margin:0 auto;padding:22px 28px 56px;position:relative}
-.pagehead-top{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.pagehead-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:9px}
 .brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
 .brand-mark .x{color:var(--brand)}
 .brand-sub{font-family:'Roboto',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
 .pagehead-count{font-family:'Roboto',sans-serif;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.4)}
+.src-tabs{display:flex;gap:6px}
+.src-tab{font-family:'Roboto',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:0.02em;color:rgba(255,255,255,0.55);
+  padding:7px 15px;border:1px solid rgba(255,255,255,0.18);border-radius:20px;transition:all .15s;background:transparent;cursor:pointer;font:inherit}
+.src-tab:hover{color:#fff;border-color:rgba(255,255,255,0.4)}
+.src-tab.on{color:#fff;border-color:transparent}
+.src-tab.on[data-tab="fotmob"]{background:var(--brand)}
+.src-tab.on[data-tab="sofascore"]{background:var(--ss-brand)}
+.src-tab.on[data-tab="merged"]{background:var(--mg-brand)}
 .pagehead h1{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;letter-spacing:-0.02em;margin-top:16px;color:#fff}
-.pagehead p{font-size:13px;color:rgba(255,255,255,0.6);margin-top:6px;max-width:580px;line-height:1.5}
+.pagehead p{font-size:13px;color:rgba(255,255,255,0.6);margin-top:6px;max-width:620px;line-height:1.5}
 
 /* ── TOOLBAR LAYER ─────────────────────────────────────────────────────── */
 .app{max-width:1440px;margin:-34px auto 0;padding:0 28px 60px;position:relative;z-index:2}
@@ -169,16 +179,21 @@ th.pcell-col{left:34px}
 </head>
 <body>
 
-<div class="masthead">
+<div class="masthead" id="masthead">
   <div class="pagehead">
     <div class="pagehead-top">
       <div class="brand">
         <span class="brand-mark"><span class="x">x</span>Stats</span>
         <span class="brand-sub">Player Database</span>
       </div>
+      <div class="src-tabs" id="src-tabs">
+        <button class="src-tab" data-tab="fotmob" onclick="setTab('fotmob')">Fotmob</button>
+        <button class="src-tab" data-tab="sofascore" onclick="setTab('sofascore')">Sofascore</button>
+        <button class="src-tab" data-tab="merged" onclick="setTab('merged')">Merged</button>
+      </div>
       <div class="pagehead-count" id="count-badge"></div>
     </div>
-    <h1>Search every player</h1>
+    <h1 id="pagehead-h1">Search every player</h1>
     <p id="pagehead-desc">Players across 28 leagues and two seasons, built from full-season tracking data. Filter by position, league, season or minutes played, switch stat categories, then open a player for the full scouting report.</p>
   </div>
 </div>
@@ -199,7 +214,7 @@ th.pcell-col{left:34px}
         <label>League</label>
         <select class="pick" id="league-sel"><option value="">All</option></select>
       </div>
-      <div class="fieldset">
+      <div class="fieldset" id="season-field">
         <label>Season</label>
         <select class="pick" id="season-sel"><option value="">All</option></select>
       </div>
@@ -235,6 +250,8 @@ th.pcell-col{left:34px}
 
 <script>
 const $=id=>document.getElementById(id);
+
+/* ── Per-source tab configuration ───────────────────────────────────────── */
 const POS_GROUPS = [
   ['', 'All'], ['Goalkeeper','GK'],
   ['Centre-Back,Left-Back,Right-Back,Left Wing-Back,Right Wing-Back','DEF'],
@@ -249,18 +266,61 @@ const GRANULAR_GROUPS = [
   ['Left Midfield','LM'], ['Right Midfield','RM'],
   ['Left Winger','LW'], ['Right Winger','RW'], ['Striker','ST'],
 ];
+const SS_POS_GROUPS = [['', 'All'], ['G','GK'], ['D','DEF'], ['M','MID'], ['F','FWD']];
 const GRANULAR_ABBR = Object.fromEntries(GRANULAR_GROUPS.filter(([v])=>v).map(([v,l])=>[v,l]));
 let GRANULAR_MODE = false;
+
+const TABS = {
+  fotmob: {
+    label:'Fotmob', dataUrl:'data/fotmob_index.json', catUrl:'data/fotmob_categories.json',
+    linkFn:p=>`fotmob_player.html?id=${p.id}`, posField:'pos', hasGranular:true, hasSeason:true, hasTrend:true,
+    title:'Search every player', desc:n=>`${n.toLocaleString()} player-seasons across 28 leagues, built from full-season tracking data. Filter by position, league, season or minutes played, switch stat categories, then open a player for the full scouting report.`,
+    overview:[
+      {cat:'Attacking',key:'goals',label:'G'},{cat:'Attacking',key:'xg',label:'xG'},
+      {cat:'Attacking',key:'assists',label:'A'},{cat:'Attacking',key:'xa',label:'xA'},
+      {cat:'Defending',key:'tackles',label:'Tkl'},{cat:'Defending',key:'interceptions',label:'Int'},
+    ],
+    ratingCols:[{sortKey:'rating',label:'Rating',cellFn:p=>p.rating!=null?p.rating.toFixed(2):'—'}],
+  },
+  sofascore: {
+    label:'Sofascore', dataUrl:'data/sofascore_index.json', catUrl:'data/sofascore_categories.json',
+    linkFn:p=>`sofascore_player.html?id=${p.id}`, posField:'pos_key', hasGranular:false, hasSeason:false, hasTrend:false,
+    title:'Search every player — Sofascore', desc:n=>`${n.toLocaleString()} players from Sofascore's own tracking data — 5-axis skill ratings (Attacking/Creativity/Technique/Defending/Tactical), physical metrics and match rating. Filter by position, league or minutes played, then open a player for the full breakdown.`,
+    overview:[
+      {cat:'Attacking',key:'goals',label:'G'},{cat:'Attacking',key:'expectedGoals',label:'xG'},
+      {cat:'Attacking',key:'assists',label:'A'},{cat:'Defending',key:'tackles',label:'Tkl'},
+      {cat:'Defending',key:'interceptions',label:'Int'},{cat:'Radar Attributes',key:'attr_att',label:'ATT'},
+    ],
+    ratingCols:[{sortKey:'rating',label:'Rating',cellFn:p=>p.rating!=null?p.rating.toFixed(2):'—'}],
+  },
+  merged: {
+    label:'Merged', dataUrl:'data/merged_index.json', catUrl:'data/merged_categories.json',
+    linkFn:p=>`fotmob_player.html?id=${p.id}`, posField:'pos', hasGranular:true, hasSeason:false, hasTrend:true,
+    title:'Fotmob × Sofascore — matched players', desc:n=>`${n.toLocaleString()} players confirmed on BOTH Fotmob and Sofascore (linked via the entity-resolution maestro). Every stat category comes in two flavors — pick "(Fotmob)" or "(Sofascore)" in Columns to compare how the two sources see the same player.`,
+    overview:[
+      {cat:'Attacking (Fotmob)',key:'goals',label:'G·FM'},{cat:'Attacking (Sofascore)',key:'goals',label:'G·SS'},
+      {cat:'Attacking (Fotmob)',key:'assists',label:'A·FM'},{cat:'Attacking (Sofascore)',key:'assists',label:'A·SS'},
+      {cat:'Defending (Fotmob)',key:'tackles',label:'Tkl·FM'},{cat:'Defending (Sofascore)',key:'tackles',label:'Tkl·SS'},
+    ],
+    ratingCols:[
+      {sortKey:'fotmob_rating',label:'FM Rtg',cellFn:p=>p.fotmob_rating!=null?p.fotmob_rating.toFixed(2):'—'},
+      {sortKey:'sofascore_rating',label:'SS Rtg',cellFn:p=>p.sofascore_rating!=null?p.sofascore_rating.toFixed(2):'—'},
+    ],
+  },
+};
+
 const POS_STYLE = {
   Striker:['var(--pos-fw-bg)','var(--pos-fw-ink)'],'Left Winger':['var(--pos-fw-bg)','var(--pos-fw-ink)'],'Right Winger':['var(--pos-fw-bg)','var(--pos-fw-ink)'],
   'Centre-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Left-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Right-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],
   'Left Wing-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Right Wing-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],
   'Goalkeeper':['var(--pos-gk-bg)','var(--pos-gk-ink)'],
+  F:['var(--pos-fw-bg)','var(--pos-fw-ink)'], D:['var(--pos-df-bg)','var(--pos-df-ink)'], G:['var(--pos-gk-bg)','var(--pos-gk-ink)'], M:['var(--pos-mf-bg)','var(--pos-mf-ink)'],
 };
 const AVATAR_BG = ['#1f4ea8','#0f7a4e','#b3261e','#92660c','#6d3fae','#1a7f8e','#a1472e','#3a5a9e'];
 function posStyle(p){ return POS_STYLE[p]||['var(--pos-mf-bg)','var(--pos-mf-ink)']; }
-function posAbbr(p){
+function posAbbr(p,tab){
   if(!p) return '—';
+  if(tab==='sofascore') return {G:'GK',D:'DF',M:'MF',F:'FW'}[p] || '—';
   if(GRANULAR_MODE) return GRANULAR_ABBR[p] || p;
   if(p==='Goalkeeper') return 'GK'; if(p.includes('Back')) return 'DF';
   if(p.includes('Midfield')) return 'MF'; return 'FW';
@@ -295,33 +355,14 @@ function sparkSvg(trend){
 }
 const SORT_ICON = `<span class="arrows"><svg class="up" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5l7 9H5z"/></svg><svg class="dn" viewBox="0 0 24 24" fill="currentColor"><path d="M12 19l-7-9h14z"/></svg></span>`;
 
-const BASE_COLS = [
-  {k:'rank',label:'#',sort:null,cls:'rank stick mono'},
-  {k:'player',label:'Player',sort:'name',cls:'pcell-col stick'},
-  {k:'pos',label:'Pos',sort:null},
-  {k:'league',label:'League',sort:null},
-  {k:'age',label:'Age',sort:'age'},
-  {k:'mp',label:'MP',sort:'mp'},
-  {k:'rating',label:'Rating',sort:'rating'},
-];
-const TAIL_COLS = [
-  {k:'mv',label:'Value',sort:'mv'},
-  {k:'trend',label:'Trend',sort:null},
-];
-const OVERVIEW_COLS = [
-  {cat:'Attacking',key:'goals',label:'G'},
-  {cat:'Attacking',key:'xg',label:'xG'},
-  {cat:'Attacking',key:'assists',label:'A'},
-  {cat:'Attacking',key:'xa',label:'xA'},
-  {cat:'Defending',key:'tackles',label:'Tkl'},
-  {cat:'Defending',key:'interceptions',label:'Int'},
-];
-const CAT_ORDER = ['Overview','Attacking','Passing & Creativity','Dribbling & Ball Carrying','Defending','Physical','Discipline','Goalkeeping','All'];
-
-let DATA=[], FILTERED=[], CATEGORIES={}, ACTIVE_CAT='Overview';
+let ACTIVE_TAB=null;
+let CACHE={};
+let DATA=[], FILTERED=[], CATEGORIES={}, ACTIVE_CAT='Overview', CAT_ORDER=['Overview','All'];
 let SORT_KEY='rating', SORT_DIR=-1, PAGE=1, PER_PAGE=50;
 let FILTER_POS='', FILTER_LEAGUE='', FILTER_SEASON='', FILTER_Q='', FILTER_MINS=900;
 let CUSTOM_SET=new Set(), CUSTOM_ACTIVE=false;
+
+function tabCfg(){ return TABS[ACTIVE_TAB]; }
 
 function allMetrics(){
   const out=[];
@@ -334,15 +375,8 @@ function allMetrics(){
 
 function dynCols(){
   if(CUSTOM_ACTIVE) return allMetrics().filter(m=>CUSTOM_SET.has(m.cat+'|'+m.key));
-  if(ACTIVE_CAT==='Overview') return OVERVIEW_COLS;
-  if(ACTIVE_CAT==='All'){
-    const out=[];
-    for(const cat of CAT_ORDER){
-      if(cat==='Overview'||cat==='All') continue;
-      (CATEGORIES[cat]||[]).forEach(m=>out.push({cat,key:m.key,label:m.label,dir:m.dir}));
-    }
-    return out;
-  }
+  if(ACTIVE_CAT==='Overview') return tabCfg().overview;
+  if(ACTIVE_CAT==='All') return allMetrics();
   return (CATEGORIES[ACTIVE_CAT]||[]).map(m=>({cat:ACTIVE_CAT,key:m.key,label:m.label,dir:m.dir}));
 }
 
@@ -353,7 +387,7 @@ function buildColPanel(){
       const checked = CUSTOM_SET.has(cat+'|'+m.key);
       return `<label class="cc-item"><input type="checkbox" data-cat="${cat}" data-key="${m.key}" ${checked?'checked':''}> ${m.label}</label>`;
     }).join('');
-    return `<div class="cc-group"><div class="cc-group-hd"><span>${cat}</span><button type="button" data-allcat="${cat}">Select all</button></div><div class="cc-grid">${items}</div></div>`;
+    return `<div class="cc-group"><div class="cc-group-hd"><span>${cat}</span><button type="button" data-allcat="${cat.replace(/"/g,'&quot;')}">Select all</button></div><div class="cc-grid">${items}</div></div>`;
   }).join('');
   $('colpick-panel').innerHTML = `<div class="cc-head"><b>Custom stats</b><button type="button" id="cc-clear">Clear all</button></div>${groups}`;
   $('colpick-panel').querySelectorAll('input[type=checkbox]').forEach(cb=>{
@@ -394,10 +428,18 @@ function resolveStat(p,sortKey){
 
 function buildHeader(){
   const dyn = dynCols();
+  const cfg = tabCfg();
   const cells = [];
-  BASE_COLS.forEach(c=>cells.push(`<th class="${c.cls||''}" data-sort="${c.sort||''}">${c.label}${c.sort?SORT_ICON:''}</th>`));
+  cells.push(`<th class="rank stick mono" data-sort="">#</th>`);
+  cells.push(`<th class="pcell-col stick" data-sort="name">Player${SORT_ICON}</th>`);
+  cells.push(`<th data-sort="">Pos</th>`);
+  cells.push(`<th data-sort="">League</th>`);
+  cells.push(`<th data-sort="age">Age${SORT_ICON}</th>`);
+  cells.push(`<th data-sort="mp">MP${SORT_ICON}</th>`);
+  cfg.ratingCols.forEach(r=>cells.push(`<th data-sort="${r.sortKey}">${r.label}${SORT_ICON}</th>`));
   dyn.forEach(c=>cells.push(`<th data-sort="${c.cat}|${c.key}" title="${c.label}">${c.label}${SORT_ICON}</th>`));
-  TAIL_COLS.forEach(c=>cells.push(`<th data-sort="${c.sort||''}">${c.label}${c.sort?SORT_ICON:''}</th>`));
+  cells.push(`<th data-sort="mv">Value${SORT_ICON}</th>`);
+  if(cfg.hasTrend) cells.push(`<th data-sort="">Trend</th>`);
   $('thead-row').innerHTML = cells.join('');
   document.querySelectorAll('thead th[data-sort]').forEach(th=>{
     th.addEventListener('click',()=>{
@@ -408,24 +450,51 @@ function buildHeader(){
   });
 }
 
-Promise.all([
-  fetch('data/fotmob_index.json').then(r=>r.json()),
-  fetch('data/fotmob_categories.json').then(r=>r.json()),
-]).then(([d,cats])=>{
-  DATA=d; CATEGORIES=cats;
-  $('count-badge').textContent = d.length.toLocaleString()+' players';
-  $('pagehead-desc').textContent = `${d.length.toLocaleString()} player-seasons across 28 leagues, built from full-season tracking data. Filter by position, league, season or minutes played, switch stat categories, then open a player for the full scouting report.`;
-  const leagues=[...new Set(d.map(p=>p.league).filter(Boolean))].sort();
-  $('league-sel').innerHTML += leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
-  const seasons=[...new Set(d.map(p=>p.season).filter(Boolean))].sort().reverse();
-  $('season-sel').innerHTML += seasons.map(s=>`<option value="${s}">${s}</option>`).join('');
+function setTab(tab){
+  if(tab===ACTIVE_TAB) return;
+  ACTIVE_TAB=tab;
+  FILTER_POS=''; FILTER_LEAGUE=''; FILTER_SEASON=''; CUSTOM_SET.clear(); CUSTOM_ACTIVE=false; ACTIVE_CAT='Overview'; PAGE=1;
+  GRANULAR_MODE=false;
+  const cfg=tabCfg();
+  SORT_KEY = cfg.ratingCols[0].sortKey; SORT_DIR=-1;
+  document.querySelectorAll('.src-tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  $('masthead').style.borderBottomColor = tab==='sofascore'?'var(--ss-brand)':tab==='merged'?'var(--mg-brand)':'var(--brand)';
+  $('granular-btn').style.display = cfg.hasGranular?'':'none';
+  $('season-field').style.display = cfg.hasSeason?'':'none';
+  $('pagehead-h1').textContent = cfg.title;
+  loadTabData();
+}
+
+function loadTabData(){
+  const cfg=tabCfg();
+  if(CACHE[ACTIVE_TAB]){ onDataLoaded(CACHE[ACTIVE_TAB]); return; }
+  $('tbody').innerHTML = `<tr><td colspan="14" class="loading-row">Loading players…</td></tr>`;
+  Promise.all([fetch(cfg.dataUrl).then(r=>r.json()), fetch(cfg.catUrl).then(r=>r.json())]).then(([d,cats])=>{
+    const payload={data:d,categories:cats};
+    CACHE[ACTIVE_TAB]=payload;
+    onDataLoaded(payload);
+  });
+}
+
+function onDataLoaded(payload){
+  const cfg=tabCfg();
+  DATA=payload.data; CATEGORIES=payload.categories;
+  CAT_ORDER=['Overview', ...Object.keys(CATEGORIES), 'All'];
+  $('count-badge').textContent = DATA.length.toLocaleString()+' players';
+  $('pagehead-desc').textContent = cfg.desc(DATA.length);
+  const leagues=[...new Set(DATA.map(p=>p.league).filter(Boolean))].sort();
+  $('league-sel').innerHTML = '<option value="">All</option>' + leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
+  if(cfg.hasSeason){
+    const seasons=[...new Set(DATA.map(p=>p.season).filter(Boolean))].sort().reverse();
+    $('season-sel').innerHTML = '<option value="">All</option>' + seasons.map(s=>`<option value="${s}">${s}</option>`).join('');
+  }
   renderPosSeg();
   $('cat-tabs').innerHTML = CAT_ORDER.map((c,i)=>
     `<button class="cat-tab ${i===0?'on':''}" data-cat="${c}" onclick="setCat('${c.replace(/'/g,"\\'")}',this)">${c}</button>`).join('');
   buildColPanel();
   buildHeader();
   applyFilters();
-});
+}
 
 function setCat(cat,btn){
   ACTIVE_CAT=cat;
@@ -433,15 +502,16 @@ function setCat(cat,btn){
   $('colpick-btn').classList.remove('active');
   $('colpick-btn').lastChild.textContent = ' Columns';
   document.querySelectorAll('.cat-tab').forEach(b=>b.classList.toggle('on',b===btn));
-  if(SORT_KEY!=='rating' && SORT_KEY!=='mv' && SORT_KEY!=='name' && SORT_KEY!=='age' && SORT_KEY!=='mp'){
-    SORT_KEY='rating'; SORT_DIR=-1;
+  const ratingKeys = tabCfg().ratingCols.map(r=>r.sortKey);
+  if(!ratingKeys.includes(SORT_KEY) && SORT_KEY!=='mv' && SORT_KEY!=='name' && SORT_KEY!=='age' && SORT_KEY!=='mp'){
+    SORT_KEY=ratingKeys[0]; SORT_DIR=-1;
   }
   buildHeader();
   applyFilters();
 }
 function setPosFilter(val,btn){ FILTER_POS=val; document.querySelectorAll('#pos-seg button').forEach(b=>b.classList.toggle('on',b===btn)); PAGE=1; applyFilters(); }
 function renderPosSeg(){
-  const groups = GRANULAR_MODE ? GRANULAR_GROUPS : POS_GROUPS;
+  const groups = ACTIVE_TAB==='sofascore' ? SS_POS_GROUPS : (GRANULAR_MODE ? GRANULAR_GROUPS : POS_GROUPS);
   $('pos-seg').innerHTML = groups.map(([val,label],i)=>
     `<button class="${i===0?'on':''}" data-val="${val}" onclick="setPosFilter('${val.replace(/'/g,"\\'")}',this)">${label}</button>`).join('');
 }
@@ -463,10 +533,14 @@ $('search').addEventListener('input',e=>{
 });
 
 function applyFilters(){
+  const cfg=tabCfg(), posField=cfg.posField;
   FILTERED = DATA.filter(p=>{
-    if(FILTER_POS && !FILTER_POS.split(',').includes(p.pos)) return false;
+    if(FILTER_POS){
+      if(posField==='pos_key'){ if(p.pos_key!==FILTER_POS) return false; }
+      else if(!FILTER_POS.split(',').includes(p.pos)) return false;
+    }
     if(FILTER_LEAGUE && p.league!==FILTER_LEAGUE) return false;
-    if(FILTER_SEASON && p.season!==FILTER_SEASON) return false;
+    if(cfg.hasSeason && FILTER_SEASON && p.season!==FILTER_SEASON) return false;
     if(FILTER_MINS && (p.mins==null || p.mins<FILTER_MINS)) return false;
     if(FILTER_Q && !(p.name&&p.name.toLowerCase().includes(FILTER_Q)) && !(p.team&&p.team.toLowerCase().includes(FILTER_Q))) return false;
     return true;
@@ -487,8 +561,9 @@ function applyFilters(){
 }
 
 function renderPage(){
+  const cfg=tabCfg();
   const dyn = dynCols();
-  const colCount = BASE_COLS.length + dyn.length + TAIL_COLS.length;
+  const colCount = 6 + cfg.ratingCols.length + dyn.length + 1 + (cfg.hasTrend?1:0);
   const totalPages=Math.max(1,Math.ceil(FILTERED.length/PER_PAGE));
   PAGE=Math.min(PAGE,totalPages);
   const start=(PAGE-1)*PER_PAGE;
@@ -500,22 +575,23 @@ function renderPage(){
     const avCol = avatarColor(p.name);
     const photoHtml = p.photo ? `<img class="avatar" src="${p.photo}" onerror="this.outerHTML='<div class=\\'avatar-ph\\' style=\\'background:${avCol}\\'>${initials}</div>'">`
       : `<div class="avatar-ph" style="background:${avCol}">${initials}</div>`;
-    const [pbg,pink] = posStyle(p.pos);
+    const [pbg,pink] = posStyle(cfg.posField==='pos_key'?p.pos_key:p.pos);
     const dynCells = dyn.map(c=>{
       const {val} = resolveStat(p,`${c.cat}|${c.key}`);
       return `<td class="tnum stat-cell">${fmtStat(val,c.label)}</td>`;
     }).join('');
-    return `<tr onclick="location.href='fotmob_player.html?id=${p.id}'">
+    const ratingCells = cfg.ratingCols.map(r=>`<td class="tnum stat-cell">${r.cellFn(p)}</td>`).join('');
+    return `<tr onclick="location.href='${cfg.linkFn(p)}'">
       <td class="rank stick mono">${start+i+1}</td>
       <td class="l pcell-col stick"><div class="pcell">${photoHtml}<div><div class="pname">${p.name||'—'}</div><div class="pteam">${p.team||'Free Agent'}</div></div></div></td>
-      <td><span class="postag" style="background:${pbg};color:${pink}">${posAbbr(p.pos)}</span></td>
+      <td><span class="postag" style="background:${pbg};color:${pink}">${posAbbr(cfg.posField==='pos_key'?p.pos_key:p.pos, ACTIVE_TAB)}</span></td>
       <td class="l lgtag">${p.league||'—'}</td>
       <td class="tnum mono">${fmtNum(p.age)}</td>
       <td class="tnum mono">${fmtNum(p.mp)}</td>
-      <td class="tnum stat-cell">${p.rating!=null?p.rating.toFixed(2):'—'}</td>
+      ${ratingCells}
       ${dynCells}
       <td class="mv-cell">${fmtM(p.mv)}</td>
-      <td class="trend-cell">${sparkSvg(p.trend)}</td>
+      ${cfg.hasTrend?`<td class="trend-cell">${sparkSvg(p.trend)}</td>`:''}
     </tr>`;
   }).join('');
 
@@ -545,6 +621,8 @@ function renderPage(){
 }
 function gotoPage(n){ PAGE=n; renderPage(); window.scrollTo({top:0,behavior:'smooth'}); }
 function setPerPage(n){ PER_PAGE=+n; PAGE=1; renderPage(); }
+
+setTab('fotmob');
 </script>
 </body>
 </html>
