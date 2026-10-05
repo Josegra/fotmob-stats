@@ -52,6 +52,25 @@ VAL_DIR.mkdir(parents=True, exist_ok=True)
 PREV_SEASON_EXCLUDE_LEAGUES = {'Brazil Serie A', 'Chile Primera Division', 'Ecuador Liga Pro', 'MLS'}
 PREV_SEASON_LABEL = '2025-2026'
 
+# Split-calendar European leagues (season runs ~August to May). A "current
+# 2026-2027" row showing an implausibly high matches_played this early in the
+# season means the scraper never refreshed that row after the season rolled
+# over — it's really the player's complete FINAL 2025/26 tally, mislabeled as
+# current. Confirmed live 2026-10-05: Victor Nelsson's "current" row showed 38
+# Serie A matches (a league/club he'd actually left for Superligaen, where his
+# real 2026-27 total was 3) — and the matches_played distribution for these
+# leagues has a clean valley between 9 and 15, not a smooth curve, confirming
+# this is a distinct stale-data population rather than genuinely busy players.
+# Every one of the ~809 affected players already has a real 2025-2026 row, so
+# dropping the bad "current" row never removes a player from the site outright
+# — it just stops showing them under a season they don't have real data for.
+STALE_CURRENT_SEASON_LEAGUES = {
+    'Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Championship',
+    'La Liga 2', '2. Bundesliga', 'Eredivisie', 'Primeira Liga', 'Swiss Super League',
+    'Russian Premier League', 'Saudi Pro League', 'Super Lig',
+}
+STALE_CURRENT_SEASON_MP_THRESHOLD = 14
+
 
 def build_valuation_files():
     """webapp/data/valuations/{player_id}.json used to be written only by
@@ -432,6 +451,11 @@ def main():
 
     print(f'Loading {SRC_CSV.name}...')
     df = pd.read_csv(SRC_CSV, low_memory=False)
+    stale_mask = df['league'].isin(STALE_CURRENT_SEASON_LEAGUES) & (df['matches_played'] > STALE_CURRENT_SEASON_MP_THRESHOLD)
+    if stale_mask.any():
+        print(f'  Dropping {stale_mask.sum():,} current-season rows with implausible matches_played '
+              f'(>{STALE_CURRENT_SEASON_MP_THRESHOLD}) — leftover prior-season data never refreshed after the season transition')
+        df = df[~stale_mask]
     df = df.sort_values('matches_played', ascending=False).drop_duplicates('player_id', keep='first')
     print(f'  {len(df):,} unique players (current season)')
 
