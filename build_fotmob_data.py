@@ -72,6 +72,24 @@ PREV_SEASON_LABEL = '2025-2026'
 # contamination theory that the user asked for it to be removed outright.
 PREV_SEASON_EXCLUDE_PLAYER_IDS = {1467236}
 
+# Pattern-based exclusion (2026-10-06): can't live-verify historical data (no
+# time machine — a live fetch only ever shows CURRENT state, which is what
+# confirmed Nelsson/Hull City but can't confirm a PAST season's row), so this
+# is evidence-by-pattern, not proof, and was a deliberate tradeoff the user
+# accepted. At market_value>=30M + is_international + matches_played<=8, the
+# candidate list (166 players in the 14 euro leagues) is almost entirely
+# undisputed starters who would routinely play 30-40 games a season absent a
+# major injury — Haaland, Bellingham, Mbappe, Vinicius Jr, Pedri, Saka,
+# Musiala and Kane were all in it. At that concentration of elite, rarely-
+# rotated players, a single-digit "full season" match count is far more likely
+# to be the same tournamentId-ignoring contamination as Lamine's case than
+# 166 simultaneous career-threatening injuries. Residual risk: a genuine
+# long-term injury (e.g. an ACL tear) looks identical in the data and could be
+# wrongly swept up here — accepted knowingly, not a false positive we can
+# detect and exclude.
+PREV_SEASON_EXCLUDE_ELITE_LOW_MATCHES_MP = 8
+PREV_SEASON_EXCLUDE_ELITE_LOW_MATCHES_MV = 30_000_000
+
 # Split-calendar European leagues (season runs ~August to May). A "current
 # 2026-2027" row showing an implausibly high matches_played this early in the
 # season means the scraper never refreshed that row after the season rolled
@@ -491,6 +509,16 @@ def main():
         pdf = pd.read_csv(PREV_SEASON_CSV, low_memory=False)
         pdf = pdf[~pdf['league'].isin(PREV_SEASON_EXCLUDE_LEAGUES)]
         pdf = pdf[~pdf['player_id'].isin(PREV_SEASON_EXCLUDE_PLAYER_IDS)]
+        elite_stale_mask = (
+            (pdf['is_international'] == 1)
+            & (pdf['matches_played'] <= PREV_SEASON_EXCLUDE_ELITE_LOW_MATCHES_MP)
+            & (pdf['market_value_eur'] >= PREV_SEASON_EXCLUDE_ELITE_LOW_MATCHES_MV)
+        )
+        if elite_stale_mask.any():
+            print(f'  Dropping {elite_stale_mask.sum():,} likely tournament-contaminated elite rows '
+                  f'(international, <={PREV_SEASON_EXCLUDE_ELITE_LOW_MATCHES_MP} matches, '
+                  f'>={PREV_SEASON_EXCLUDE_ELITE_LOW_MATCHES_MV/1e6:.0f}M value)')
+            pdf = pdf[~elite_stale_mask]
         pdf = pdf.sort_values('matches_played', ascending=False).drop_duplicates('player_id', keep='first')
         print(f'  {len(pdf):,} unique players ({PREV_SEASON_LABEL}, after excluding calendar-year leagues)')
         prev_index, prev_written = process_dataframe(
