@@ -60,11 +60,18 @@ a{color:inherit;text-decoration:none}
   font-weight:600;background:var(--surface-2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
   color:var(--ink);cursor:pointer;appearance:none;-webkit-appearance:none;transition:border-color .12s}
 .pick:hover{border-color:var(--ink-2)}
-.seg{display:flex;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:4px;padding:2px;gap:1px}
+.seg{display:flex;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:4px;padding:2px;gap:1px;max-width:100%}
 .seg button{background:transparent;border:none;border-radius:3px;padding:0 12px;height:32px;
   font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap;transition:all .12s}
 .seg button:hover{background:var(--hover-wash);color:var(--hover-ink)}
 .seg button.on{background:var(--hover-wash);color:var(--hover-ink);font-weight:800}
+
+/* ── GRANULAR POSITION TOGGLE ──────────────────────────────────────────── */
+.gran-btn{height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 14px;font:inherit;font-size:12.5px;
+  font-weight:700;background:var(--surface-2);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .12s}
+.gran-btn:hover{border-color:var(--hover-ink);color:var(--hover-ink)}
+.gran-btn.active{background:var(--hover-wash);border-color:var(--hover-wash);color:var(--hover-ink)}
+.gran-btn svg{width:13px;height:13px}
 
 /* ── CUSTOM COLUMN PICKER ──────────────────────────────────────────────── */
 .colpick{position:relative}
@@ -184,6 +191,10 @@ th.pcell-col{left:34px}
         <input id="search" type="text" placeholder="Search player or team…" autocomplete="off">
       </div>
       <div class="seg" id="pos-seg"></div>
+      <button class="gran-btn" id="granular-btn" onclick="toggleGranular()" title="Switch between broad position groups (DEF/MID/FWD) and exact positions (CB/LB/RB/DM/CM/AM…)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 21v-7M4 10V3M12 21v-11M12 6V3M20 21v-5M20 12V3"/><path d="M1 14h6M9 10h6M17 16h6"/></svg>
+        Granular
+      </button>
       <div class="fieldset">
         <label>League</label>
         <select class="pick" id="league-sel"><option value="">All</option></select>
@@ -230,6 +241,16 @@ const POS_GROUPS = [
   ['Defensive Midfield,Central Midfield,Attacking Midfield,Left Midfield,Right Midfield','MID'],
   ['Striker,Left Winger,Right Winger','FWD'],
 ];
+const GRANULAR_GROUPS = [
+  ['', 'All'], ['Goalkeeper','GK'],
+  ['Centre-Back','CB'], ['Left-Back','LB'], ['Right-Back','RB'],
+  ['Left Wing-Back','LWB'], ['Right Wing-Back','RWB'],
+  ['Defensive Midfield','DM'], ['Central Midfield','CM'], ['Attacking Midfield','AM'],
+  ['Left Midfield','LM'], ['Right Midfield','RM'],
+  ['Left Winger','LW'], ['Right Winger','RW'], ['Striker','ST'],
+];
+const GRANULAR_ABBR = Object.fromEntries(GRANULAR_GROUPS.filter(([v])=>v).map(([v,l])=>[v,l]));
+let GRANULAR_MODE = false;
 const POS_STYLE = {
   Striker:['var(--pos-fw-bg)','var(--pos-fw-ink)'],'Left Winger':['var(--pos-fw-bg)','var(--pos-fw-ink)'],'Right Winger':['var(--pos-fw-bg)','var(--pos-fw-ink)'],
   'Centre-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Left-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Right-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],
@@ -238,8 +259,12 @@ const POS_STYLE = {
 };
 const AVATAR_BG = ['#1f4ea8','#0f7a4e','#b3261e','#92660c','#6d3fae','#1a7f8e','#a1472e','#3a5a9e'];
 function posStyle(p){ return POS_STYLE[p]||['var(--pos-mf-bg)','var(--pos-mf-ink)']; }
-function posAbbr(p){ if(!p) return '—'; if(p==='Goalkeeper') return 'GK'; if(p.includes('Back')) return 'DF';
-  if(p.includes('Midfield')) return 'MF'; return 'FW'; }
+function posAbbr(p){
+  if(!p) return '—';
+  if(GRANULAR_MODE) return GRANULAR_ABBR[p] || p;
+  if(p==='Goalkeeper') return 'GK'; if(p.includes('Back')) return 'DF';
+  if(p.includes('Midfield')) return 'MF'; return 'FW';
+}
 function avatarColor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))>>>0; return AVATAR_BG[h%AVATAR_BG.length]; }
 function fmtM(v){ if(v==null) return '—'; const a=Math.abs(v);
   if(a>=1e6) return '€'+(v/1e6).toFixed(1)+'M'; if(a>=1e3) return '€'+(v/1e3).toFixed(0)+'K'; return '€'+v; }
@@ -394,8 +419,7 @@ Promise.all([
   $('league-sel').innerHTML += leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
   const seasons=[...new Set(d.map(p=>p.season).filter(Boolean))].sort().reverse();
   $('season-sel').innerHTML += seasons.map(s=>`<option value="${s}">${s}</option>`).join('');
-  $('pos-seg').innerHTML = POS_GROUPS.map(([val,label],i)=>
-    `<button class="${i===0?'on':''}" data-val="${val}" onclick="setPosFilter('${val.replace(/'/g,"\\'")}',this)">${label}</button>`).join('');
+  renderPosSeg();
   $('cat-tabs').innerHTML = CAT_ORDER.map((c,i)=>
     `<button class="cat-tab ${i===0?'on':''}" data-cat="${c}" onclick="setCat('${c.replace(/'/g,"\\'")}',this)">${c}</button>`).join('');
   buildColPanel();
@@ -416,6 +440,19 @@ function setCat(cat,btn){
   applyFilters();
 }
 function setPosFilter(val,btn){ FILTER_POS=val; document.querySelectorAll('#pos-seg button').forEach(b=>b.classList.toggle('on',b===btn)); PAGE=1; applyFilters(); }
+function renderPosSeg(){
+  const groups = GRANULAR_MODE ? GRANULAR_GROUPS : POS_GROUPS;
+  $('pos-seg').innerHTML = groups.map(([val,label],i)=>
+    `<button class="${i===0?'on':''}" data-val="${val}" onclick="setPosFilter('${val.replace(/'/g,"\\'")}',this)">${label}</button>`).join('');
+}
+function toggleGranular(){
+  GRANULAR_MODE = !GRANULAR_MODE;
+  FILTER_POS = '';
+  $('granular-btn').classList.toggle('active', GRANULAR_MODE);
+  renderPosSeg();
+  PAGE = 1;
+  applyFilters();
+}
 $('league-sel').addEventListener('change',e=>{ FILTER_LEAGUE=e.target.value; PAGE=1; applyFilters(); });
 $('season-sel').addEventListener('change',e=>{ FILTER_SEASON=e.target.value; PAGE=1; applyFilters(); });
 $('mins-sel').addEventListener('change',e=>{ FILTER_MINS=+e.target.value; PAGE=1; applyFilters(); });
