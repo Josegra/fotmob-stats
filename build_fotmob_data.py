@@ -109,6 +109,26 @@ STALE_CURRENT_SEASON_LEAGUES = {
 }
 STALE_CURRENT_SEASON_MP_THRESHOLD = 14
 
+# League-mislabel fix (2026-10-06, the "Hull City bug"): 596 current-season
+# players had 2 rows under the same team_id but different league labels with
+# byte-identical stats (e.g. Lucas Herrington showed as both Premier League
+# and MLS for Hull City). Root cause: Fotmob's playerData endpoint ignores the
+# tournamentId query param and just returns whatever's currently true for the
+# player — our season_map's cached league label doesn't actually constrain
+# what comes back. Live-verified all 596 via a batch fetch of each player's
+# own mainLeague.leagueId (see newgen_stats or the original investigation) and
+# cross-referenced against LEAGUE_TID (plus two confirmed ID aliases Fotmob
+# uses for the same competition: La Liga 2 is tracked as tid 88 in our scraper
+# but reports live as 140; 2. Bundesliga is 68 vs live 146). Result precomputed
+# into data_fixes_league_mislabels.json: `to_remove` is the exact wrong-league
+# row to drop for the 549 resolved players (their correct row is kept); for 47
+# players NEITHER stored league matched live data at all (genuine transfer to
+# an untracked league, e.g. Cyprus) — both their rows are listed in
+# `to_remove` for those, since neither is confirmed correct. Don't regenerate
+# this file casually — it's a point-in-time live snapshot, not a derivable
+# rule; a stale version would need re-verification, not just a re-run.
+LEAGUE_MISLABEL_FIX_FILE = WEBAPP / 'data_fixes_league_mislabels.json'
+
 
 def build_valuation_files():
     """webapp/data/valuations/{player_id}.json used to be written only by
@@ -494,6 +514,17 @@ def main():
         print(f'  Dropping {stale_mask.sum():,} current-season rows with implausible matches_played '
               f'(>{STALE_CURRENT_SEASON_MP_THRESHOLD}) — leftover prior-season data never refreshed after the season transition')
         df = df[~stale_mask]
+
+    if LEAGUE_MISLABEL_FIX_FILE.exists():
+        with open(LEAGUE_MISLABEL_FIX_FILE, encoding='utf-8') as f:
+            fix = json.load(f)
+        remove_pairs = {(pid, league) for pid, league in fix['to_remove']}
+        mislabel_mask = df.apply(lambda r: (r['player_id'], r['league']) in remove_pairs, axis=1)
+        if mislabel_mask.any():
+            print(f'  Dropping {mislabel_mask.sum():,} rows from the live-verified league-mislabel fix '
+                  f'({len(fix["both_stale_player_ids"]):,} players had neither stored league confirmed)')
+            df = df[~mislabel_mask]
+
     df = df.sort_values('matches_played', ascending=False).drop_duplicates('player_id', keep='first')
     print(f'  {len(df):,} unique players (current season)')
 
