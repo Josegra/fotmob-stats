@@ -52,6 +52,26 @@ VAL_DIR.mkdir(parents=True, exist_ok=True)
 PREV_SEASON_EXCLUDE_LEAGUES = {'Brazil Serie A', 'Chile Primera Division', 'Ecuador Liga Pro', 'MLS'}
 PREV_SEASON_LABEL = '2025-2026'
 
+# Individual PREV_SEASON rows confirmed bad on a case-by-case basis — unlike
+# STALE_CURRENT_SEASON_LEAGUES below, there's no reliable data-only signal for
+# this one. Checked 2026-10-06: comparing matches_played for international vs
+# non-international players in PREV_SEASON turned up no distinguishing pattern
+# (54% vs 57% with <=10 matches) — so a blanket "international players are
+# suspect" rule would delete plenty of genuine partial seasons too. Fotmob's
+# API returns whatever is contextually "current" at scrape time regardless of
+# the tournamentId requested (confirmed live: querying World Cup tournamentId
+# 77 and LaLiga tournamentId 87 for the same player returned identical data),
+# so a row scraped during an international window can end up with national-team
+# form under a club league's label. Add player_ids here only once confirmed —
+# e.g. via live playerData comparison like the Lamine/Nelsson checks — not on
+# a hunch, since the risk of wrongly deleting a real injury-shortened season is
+# real. Lamine Yamal (1467236): user-flagged 2026-10-06, his PREV_SEASON row
+# (8 matches/1 goal/615 min) doesn't match a live fetch of either his current
+# club form or World Cup tournament stats, but the pattern (short, high-
+# intensity appearance burst) is consistent enough with the international-
+# contamination theory that the user asked for it to be removed outright.
+PREV_SEASON_EXCLUDE_PLAYER_IDS = {1467236}
+
 # Split-calendar European leagues (season runs ~August to May). A "current
 # 2026-2027" row showing an implausibly high matches_played this early in the
 # season means the scraper never refreshed that row after the season rolled
@@ -470,6 +490,7 @@ def main():
         print(f'Loading {PREV_SEASON_CSV.name}...')
         pdf = pd.read_csv(PREV_SEASON_CSV, low_memory=False)
         pdf = pdf[~pdf['league'].isin(PREV_SEASON_EXCLUDE_LEAGUES)]
+        pdf = pdf[~pdf['player_id'].isin(PREV_SEASON_EXCLUDE_PLAYER_IDS)]
         pdf = pdf.sort_values('matches_played', ascending=False).drop_duplicates('player_id', keep='first')
         print(f'  {len(pdf):,} unique players ({PREV_SEASON_LABEL}, after excluding calendar-year leagues)')
         prev_index, prev_written = process_dataframe(
