@@ -171,6 +171,33 @@ th.pcell-col{left:34px}
 .pgdots{font-size:11px;color:var(--muted);padding:0 2px}
 
 .loading-row{padding:60px;text-align:center;color:var(--muted);font-size:12px}
+
+/* ── MAIN ROW LAYOUT + RIGHT-SIDE LEAGUE SUMMARY ───────────────────────── */
+.main-row{display:flex;gap:16px;align-items:flex-start}
+.main-row>.card{flex:1;min-width:0}
+.side-card{width:220px;flex-shrink:0;position:sticky;top:16px;max-height:calc(100vh - 32px);
+  overflow-y:auto;padding:4px 0}
+.side-hd{padding:13px 16px 10px;border-bottom:1.5px solid var(--line-strong)}
+.side-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:0.07em;
+  text-transform:uppercase;color:var(--ink)}
+.side-sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+.lg-sum-list{padding:6px 8px}
+.lg-sum-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:3px;cursor:pointer;transition:background .1s}
+.lg-sum-row:hover{background:var(--hover-wash)}
+.lg-sum-row.on{background:var(--brand-wash)}
+.lg-sum-name{flex:1;min-width:0;font-size:11.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg-sum-row.on .lg-sum-name{color:var(--brand-ink);font-weight:700}
+.lg-sum-bar-wrap{position:relative}
+.lg-sum-count{font-size:11px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;flex-shrink:0}
+.lg-sum-track{height:3px;border-radius:2px;background:var(--line);margin-top:3px;overflow:hidden}
+.lg-sum-fill{height:100%;background:var(--line-strong);border-radius:2px}
+.lg-sum-row.on .lg-sum-fill{background:var(--brand-ink)}
+.lg-sum-empty{padding:16px;text-align:center;color:var(--muted);font-size:11.5px}
+
+@media(max-width:980px){
+  .main-row{flex-direction:column}
+  .side-card{width:100%;position:static;max-height:none}
+}
 @media(max-width:760px){
   .app,.pagehead{padding-left:12px;padding-right:12px}
   td,thead th{padding:8px 7px;font-size:11.5px}
@@ -199,6 +226,7 @@ th.pcell-col{left:34px}
 </div>
 
 <div class="app">
+  <div class="main-row">
   <div class="card">
     <div class="toolbar">
       <div class="search-box">
@@ -229,6 +257,18 @@ th.pcell-col{left:34px}
           <option value="2700">2,700+</option>
         </select>
       </div>
+      <div class="fieldset">
+        <label>MP</label>
+        <select class="pick" id="mp-sel">
+          <option value="0" selected>Any</option>
+          <option value="5">5+</option>
+          <option value="10">10+</option>
+          <option value="15">15+</option>
+          <option value="20">20+</option>
+          <option value="25">25+</option>
+          <option value="30">30+</option>
+        </select>
+      </div>
       <div class="colpick" id="colpick">
         <button class="colpick-btn" id="colpick-btn" onclick="toggleColPanel(event)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
@@ -245,6 +285,14 @@ th.pcell-col{left:34px}
       </table>
     </div>
     <div class="pager" id="pager"></div>
+  </div>
+  <div class="card side-card">
+    <div class="side-hd">
+      <div class="side-title">Players by League</div>
+      <div class="side-sub" id="side-sub"></div>
+    </div>
+    <div class="lg-sum-list" id="lg-sum-list"></div>
+  </div>
   </div>
 </div>
 
@@ -295,7 +343,7 @@ const TABS = {
   },
   merged: {
     label:'Merged', dataUrl:'data/merged_index.json', catUrl:'data/merged_categories.json',
-    linkFn:p=>`fotmob_player.html?id=${p.id}`, posField:'pos', hasGranular:true, hasSeason:false, hasTrend:true,
+    linkFn:p=>`fotmob_player.html?id=${p.id}`, posField:'pos', hasGranular:true, hasSeason:true, hasTrend:true,
     title:'Fotmob × Sofascore — matched players', desc:n=>`${n.toLocaleString()} players confirmed on BOTH Fotmob and Sofascore (linked via the entity-resolution maestro). Every stat category comes in two flavors — pick "(Fotmob)" or "(Sofascore)" in Columns to compare how the two sources see the same player.`,
     overview:[
       {cat:'Attacking (Fotmob)',key:'goals',label:'G·FM'},{cat:'Attacking (Sofascore)',key:'goals',label:'G·SS'},
@@ -359,8 +407,21 @@ let ACTIVE_TAB=null;
 let CACHE={};
 let DATA=[], FILTERED=[], CATEGORIES={}, ACTIVE_CAT='Overview', CAT_ORDER=['Overview','All'];
 let SORT_KEY='rating', SORT_DIR=-1, PAGE=1, PER_PAGE=50;
-let FILTER_POS='', FILTER_LEAGUE='', FILTER_SEASON='', FILTER_Q='', FILTER_MINS=900;
+let FILTER_POS='', FILTER_LEAGUE='', FILTER_SEASON='', FILTER_Q='', FILTER_MINS=900, FILTER_MP=0;
 let CUSTOM_SET=new Set(), CUSTOM_ACTIVE=false;
+
+const CAT_ABBR = {
+  'Attacking':'Attack', 'Passing & Creativity':'Passing', 'Dribbling & Ball Carrying':'Dribbling',
+  'Defending':'Defense', 'Physical':'Physical', 'Discipline':'Discipline', 'Goalkeeping':'GK',
+  'Radar Attributes':'Radar',
+};
+function catLabel(cat){
+  if(ACTIVE_TAB!=='merged') return cat;
+  const m = cat.match(/^(.*) \((Fotmob|Sofascore)\)$/);
+  if(!m) return cat;
+  const [, base, src] = m;
+  return (src==='Fotmob'?'FM ':'SS ') + (CAT_ABBR[base] || base);
+}
 
 function tabCfg(){ return TABS[ACTIVE_TAB]; }
 
@@ -387,7 +448,7 @@ function buildColPanel(){
       const checked = CUSTOM_SET.has(cat+'|'+m.key);
       return `<label class="cc-item"><input type="checkbox" data-cat="${cat}" data-key="${m.key}" ${checked?'checked':''}> ${m.label}</label>`;
     }).join('');
-    return `<div class="cc-group"><div class="cc-group-hd"><span>${cat}</span><button type="button" data-allcat="${cat.replace(/"/g,'&quot;')}">Select all</button></div><div class="cc-grid">${items}</div></div>`;
+    return `<div class="cc-group"><div class="cc-group-hd"><span>${catLabel(cat)}</span><button type="button" data-allcat="${cat.replace(/"/g,'&quot;')}">Select all</button></div><div class="cc-grid">${items}</div></div>`;
   }).join('');
   $('colpick-panel').innerHTML = `<div class="cc-head"><b>Custom stats</b><button type="button" id="cc-clear">Clear all</button></div>${groups}`;
   $('colpick-panel').querySelectorAll('input[type=checkbox]').forEach(cb=>{
@@ -490,7 +551,7 @@ function onDataLoaded(payload){
   }
   renderPosSeg();
   $('cat-tabs').innerHTML = CAT_ORDER.map((c,i)=>
-    `<button class="cat-tab ${i===0?'on':''}" data-cat="${c}" onclick="setCat('${c.replace(/'/g,"\\'")}',this)">${c}</button>`).join('');
+    `<button class="cat-tab ${i===0?'on':''}" data-cat="${c}" title="${c}" onclick="setCat('${c.replace(/'/g,"\\'")}',this)">${catLabel(c)}</button>`).join('');
   buildColPanel();
   buildHeader();
   applyFilters();
@@ -526,25 +587,30 @@ function toggleGranular(){
 $('league-sel').addEventListener('change',e=>{ FILTER_LEAGUE=e.target.value; PAGE=1; applyFilters(); });
 $('season-sel').addEventListener('change',e=>{ FILTER_SEASON=e.target.value; PAGE=1; applyFilters(); });
 $('mins-sel').addEventListener('change',e=>{ FILTER_MINS=+e.target.value; PAGE=1; applyFilters(); });
+$('mp-sel').addEventListener('change',e=>{ FILTER_MP=+e.target.value; PAGE=1; applyFilters(); });
 let searchDebounce;
 $('search').addEventListener('input',e=>{
   clearTimeout(searchDebounce);
   searchDebounce=setTimeout(()=>{ FILTER_Q=e.target.value.trim().toLowerCase(); PAGE=1; applyFilters(); },150);
 });
 
+function passesFilters(p,cfg,posField,skipLeague){
+  if(FILTER_POS){
+    if(posField==='pos_key'){ if(p.pos_key!==FILTER_POS) return false; }
+    else if(!FILTER_POS.split(',').includes(p.pos)) return false;
+  }
+  if(!skipLeague && FILTER_LEAGUE && p.league!==FILTER_LEAGUE) return false;
+  if(cfg.hasSeason && FILTER_SEASON && p.season!==FILTER_SEASON) return false;
+  if(FILTER_MINS && (p.mins==null || p.mins<FILTER_MINS)) return false;
+  if(FILTER_MP && (p.mp==null || p.mp<FILTER_MP)) return false;
+  if(FILTER_Q && !(p.name&&p.name.toLowerCase().includes(FILTER_Q)) && !(p.team&&p.team.toLowerCase().includes(FILTER_Q))) return false;
+  return true;
+}
+
 function applyFilters(){
   const cfg=tabCfg(), posField=cfg.posField;
-  FILTERED = DATA.filter(p=>{
-    if(FILTER_POS){
-      if(posField==='pos_key'){ if(p.pos_key!==FILTER_POS) return false; }
-      else if(!FILTER_POS.split(',').includes(p.pos)) return false;
-    }
-    if(FILTER_LEAGUE && p.league!==FILTER_LEAGUE) return false;
-    if(cfg.hasSeason && FILTER_SEASON && p.season!==FILTER_SEASON) return false;
-    if(FILTER_MINS && (p.mins==null || p.mins<FILTER_MINS)) return false;
-    if(FILTER_Q && !(p.name&&p.name.toLowerCase().includes(FILTER_Q)) && !(p.team&&p.team.toLowerCase().includes(FILTER_Q))) return false;
-    return true;
-  });
+  FILTERED = DATA.filter(p=>passesFilters(p,cfg,posField,false));
+  renderLeagueSummary(cfg,posField);
   FILTERED.sort((a,b)=>{
     if(SORT_KEY==='name'){ const av=a.name||'', bv=b.name||''; return SORT_DIR* -1 * av.localeCompare(bv); }
     let av=resolveStat(a,SORT_KEY).val, bv=resolveStat(b,SORT_KEY).val;
@@ -621,6 +687,34 @@ function renderPage(){
 }
 function gotoPage(n){ PAGE=n; renderPage(); window.scrollTo({top:0,behavior:'smooth'}); }
 function setPerPage(n){ PER_PAGE=+n; PAGE=1; renderPage(); }
+
+/* ── RIGHT-SIDE LEAGUE SUMMARY ──────────────────────────────────────────
+   Counts ignore the League filter itself (so picking a league doesn't
+   collapse this to one row) but respect every other active filter, so it
+   answers "given my other filters, how many players per league?" */
+function renderLeagueSummary(cfg,posField){
+  const pool = DATA.filter(p=>passesFilters(p,cfg,posField,true));
+  const counts = {};
+  pool.forEach(p=>{ const l=p.league||'Unknown'; counts[l]=(counts[l]||0)+1; });
+  const rows = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  $('side-sub').textContent = `${pool.length.toLocaleString()} players, ${rows.length} leagues`;
+  if(!rows.length){ $('lg-sum-list').innerHTML = `<div class="lg-sum-empty">No players match these filters.</div>`; return; }
+  const max = rows[0][1];
+  $('lg-sum-list').innerHTML = rows.map(([lg,n])=>`
+    <div class="lg-sum-row ${lg===FILTER_LEAGUE?'on':''}" onclick="setLeagueFilterFromSummary('${lg.replace(/'/g,"\\'")}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;gap:6px">
+          <span class="lg-sum-name">${lg}</span><span class="lg-sum-count">${n}</span>
+        </div>
+        <div class="lg-sum-track"><div class="lg-sum-fill" style="width:${(n/max*100).toFixed(0)}%"></div></div>
+      </div>
+    </div>`).join('');
+}
+function setLeagueFilterFromSummary(lg){
+  FILTER_LEAGUE = (FILTER_LEAGUE===lg) ? '' : lg;
+  $('league-sel').value = FILTER_LEAGUE;
+  PAGE=1; applyFilters();
+}
 
 setTab('fotmob');
 </script>
