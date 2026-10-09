@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Similar Player Finder (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#6d3fae; --brand-ink:#532f87; --brand-wash:#f1ecfb;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.demo-flag{background:#1a1a1a;color:#ffd166;text-align:center;font-size:11px;font-weight:700;padding:5px;letter-spacing:0.04em;text-transform:uppercase}
+
+.masthead{background-color:#121212;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand)}
+.pagehead{max-width:1200px;margin:0 auto;padding:20px 28px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.back-link{color:rgba(255,255,255,0.6);font-size:11.5px;font-weight:700;margin-left:auto}
+.ph-top{display:flex;align-items:center;gap:16px}
+h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:#fff;margin-top:14px}
+.ph-sub{font-size:12.5px;color:rgba(255,255,255,0.6);margin-top:4px;max-width:680px;line-height:1.5}
+
+.app{max-width:1100px;margin:0 auto;padding:20px 28px 60px}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;position:relative}
+.toolbar select{height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 28px 0 11px;font:inherit;font-size:12.5px;
+  font-weight:600;background:var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+  cursor:pointer;appearance:none}
+.search-wrap{position:relative;flex:1;min-width:260px}
+#search{width:100%;height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 12px;font:inherit;font-size:12.5px}
+.sugg{position:absolute;top:42px;left:0;right:0;background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;
+  box-shadow:var(--shadow-card);max-height:280px;overflow-y:auto;z-index:20;display:none}
+.sugg.show{display:block}
+.sugg-row{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;font-size:12px}
+.sugg-row:hover{background:var(--surface-2)}
+.sugg-row img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.sugg-sub{color:var(--muted);font-size:10.5px}
+
+.ref-card{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);
+  padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.ref-card img, .ref-ph{width:46px;height:46px;border-radius:50%;object-fit:cover;background:var(--surface-2);flex-shrink:0}
+.ref-ph{display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;color:#fff;font-size:15px}
+.ref-name{font-weight:800;font-size:15px}
+.ref-sub{font-size:11.5px;color:var(--muted)}
+.ref-rating{margin-left:auto;text-align:right}
+.ref-rating .v{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:var(--brand)}
+.ref-rating .l{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.ccard{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);
+  padding:13px;cursor:pointer;transition:transform .1s}
+.ccard:hover{transform:translateY(-1px)}
+.ctop{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--surface-2);flex-shrink:0;border:1px solid var(--line)}
+.avatar-ph{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;color:#fff}
+.cname{font-weight:700;font-size:12.5px}
+.cteam{font-size:10px;color:var(--muted)}
+.cmatch{margin-left:auto;text-align:right}
+.cmatch .v{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;color:var(--brand)}
+.cmatch .l{font-size:8.5px;color:var(--muted);text-transform:uppercase}
+.mini-bars{display:flex;gap:3px;height:24px;align-items:flex-end}
+.mini-bar{flex:1;border-radius:2px 2px 0 0;position:relative;background:var(--surface-2)}
+.mini-bar .fill{position:absolute;bottom:0;left:0;right:0;border-radius:2px 2px 0 0;background:var(--brand)}
+.mini-lbls{display:flex;gap:3px;margin-top:3px}
+.mini-lbls span{flex:1;text-align:center;font-size:7.5px;font-weight:700;color:var(--muted)}
+.empty{padding:60px;text-align:center;color:var(--muted);font-size:13px;grid-column:1/-1}
+</style>
+</head>
+<body>
+<div class="demo-flag">DEMO &mdash; Similar Player Finder (prototipo, no enlazado aun)</div>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="ph-top">
+      <div class="brand"><span class="brand-mark"><span class="x">x</span>Stats</span><span class="brand-sub">Similar Players</span></div>
+      <a class="back-link" href="fotmob_leaderboard.html">&larr; Volver al buscador</a>
+    </div>
+    <h1>Jugadores con un perfil parecido</h1>
+    <p class="ph-sub">Busca un jugador y encuentra a quien mas se parece dentro de la <b>misma temporada</b> y grupo de posicion, usando el radar Fotmob+Sofascore (ataque, creatividad, tecnica, defensa, tactica).</p>
+  </div>
+</div>
+
+<div class="app">
+  <div class="toolbar">
+    <select id="season-sel"></select>
+    <select id="posgroup-sel">
+      <option value="">Cualquier posicion</option>
+      <option value="GK">Porteros</option>
+      <option value="DEF">Defensas</option>
+      <option value="MID">Centrocampistas</option>
+      <option value="FWD">Atacantes</option>
+    </select>
+    <div class="search-wrap">
+      <input id="search" placeholder="Busca un jugador de referencia (ej. Lamine Yamal)...">
+      <div class="sugg" id="sugg"></div>
+    </div>
+  </div>
+  <div id="ref-wrap"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const AVATAR_BG = ['#1f4ea8','#0f7a4e','#b3261e','#92660c','#6d3fae','#1a7f8e','#a1472e','#3a5a9e'];
+function avatarColor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))>>>0; return AVATAR_BG[h%AVATAR_BG.length]; }
+const AXES = ['att','cre','tec','def','tac'];
+const AXES_LBL = {att:'ATA',cre:'CRE',tec:'TEC',def:'DEF',tac:'TAC'};
+
+function posGroup(pk){
+  pk = pk || '';
+  if(pk.includes('keeper')) return 'GK';
+  if(pk.includes('back')) return 'DEF';
+  if(pk.includes('winger') || pk.includes('striker')) return 'FWD';
+  return 'MID';
+}
+
+let DATA=[], REF=null;
+
+fetch('data/merged_index.json').then(r=>r.json()).then(d=>{
+  DATA = d.filter(p=>p.radar && AXES.some(a=>p.radar[a]));
+  const seasons=[...new Set(DATA.map(p=>p.season))].sort().reverse();
+  $('season-sel').innerHTML = seasons.map(s=>`<option value="${s}">${s}</option>`).join('');
+  ['season-sel','posgroup-sel'].forEach(id=>$(id).addEventListener('change', ()=>{ REF=null; renderRef(); renderGrid([]); }));
+  wireSearch();
+  renderGrid([]);
+});
+
+function wireSearch(){
+  const input = $('search'), sugg = $('sugg');
+  input.addEventListener('input', ()=>{
+    const q = input.value.trim().toLowerCase();
+    if(q.length<2){ sugg.classList.remove('show'); return; }
+    const season = $('season-sel').value;
+    const pg = $('posgroup-sel').value;
+    const matches = DATA.filter(p=>p.season===season && (!pg || posGroup(p.pos_key)===pg) && p.name.toLowerCase().includes(q)).slice(0,8);
+    if(!matches.length){ sugg.classList.remove('show'); return; }
+    sugg.innerHTML = matches.map(p=>{
+      const ph = p.photo ? `<img src="${p.photo}">` : '';
+      return `<div class="sugg-row" data-id="${p.id}">${ph}<div><div>${p.name}</div><div class="sugg-sub">${p.team||''} &middot; ${p.league||''}</div></div></div>`;
+    }).join('');
+    sugg.classList.add('show');
+    sugg.querySelectorAll('.sugg-row').forEach(row=>row.addEventListener('click', ()=>{
+      const id = +row.dataset.id;
+      REF = DATA.find(p=>p.id===id && p.season===season);
+      input.value = REF.name;
+      sugg.classList.remove('show');
+      renderRef();
+      computeSimilar();
+    }));
+  });
+  document.addEventListener('click', e=>{ if(!e.target.closest('.search-wrap')) sugg.classList.remove('show'); });
+}
+
+function renderRef(){
+  if(!REF){ $('ref-wrap').innerHTML=''; return; }
+  const initials=(REF.name||'?').split(' ').map(s=>s[0]).filter(Boolean).slice(-2).join('');
+  const avCol = avatarColor(REF.name);
+  const photoHtml = REF.photo ? `<img src="${REF.photo}">` : `<div class="ref-ph" style="background:${avCol}">${initials}</div>`;
+  const rating = REF.fotmob_rating ?? REF.sofascore_rating;
+  $('ref-wrap').innerHTML = `<div class="ref-card">
+    ${photoHtml}
+    <div><div class="ref-name">${REF.name}</div><div class="ref-sub">${REF.team||'—'} &middot; ${REF.league||''} &middot; ${REF.season}</div></div>
+    <div class="ref-rating"><div class="v">${rating!=null?rating.toFixed(2):'—'}</div><div class="l">rating</div></div>
+  </div>`;
+}
+
+function dist(a,b){
+  return Math.sqrt(AXES.reduce((s,ax)=> s + Math.pow((a.radar[ax]||0)-(b.radar[ax]||0),2), 0));
+}
+
+function computeSimilar(){
+  if(!REF){ renderGrid([]); return; }
+  const season = $('season-sel').value;
+  const pg = posGroup(REF.pos_key);
+  const pool = DATA.filter(p=>p.season===season && p.id!==REF.id && posGroup(p.pos_key)===pg);
+  const ranked = pool.map(p=>({p, d: dist(REF,p)})).sort((a,b)=>a.d-b.d).slice(0,24);
+  renderGrid(ranked);
+}
+
+function renderGrid(ranked){
+  if(!ranked.length){ $('grid').innerHTML = `<div class="empty">${REF?'Sin jugadores comparables para este filtro.':'Busca un jugador de referencia arriba para empezar.'}</div>`; return; }
+  const maxD = Math.sqrt(5*100*100);
+  $('grid').innerHTML = ranked.map(({p,d})=>{
+    const initials=(p.name||'?').split(' ').map(s=>s[0]).filter(Boolean).slice(-2).join('');
+    const avCol = avatarColor(p.name);
+    const photoHtml = p.photo ? `<img class="avatar" src="${p.photo}" onerror="this.outerHTML='<div class=\\'avatar-ph\\' style=\\'background:${avCol}\\'>${initials}</div>'">`
+      : `<div class="avatar-ph" style="background:${avCol}">${initials}</div>`;
+    const simPct = Math.max(0, Math.round((1 - d/maxD)*100));
+    const bars = AXES.map(ax=>`<div class="mini-bar" style="height:24px"><div class="fill" style="height:${p.radar[ax]||0}%"></div></div>`).join('');
+    const lbls = AXES.map(ax=>`<span>${AXES_LBL[ax]}</span>`).join('');
+    return `<div class="ccard" onclick="location.href='fotmob_player.html?id=${p.id}'">
+      <div class="ctop">${photoHtml}<div><div class="cname">${p.name}</div><div class="cteam">${p.team||'—'} &middot; ${p.league||''}</div></div>
+        <div class="cmatch"><div class="v">${simPct}%</div><div class="l">match</div></div></div>
+      <div class="mini-bars">${bars}</div>
+      <div class="mini-lbls">${lbls}</div>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

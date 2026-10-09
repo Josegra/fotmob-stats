@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Team DNA (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#1f4ea8; --brand-ink:#163a7d; --brand-wash:#eaf2fd;
+  --a:#1f4ea8; --a-wash:#eaf2fd; --b:#ea3323; --b-wash:#fdeceb;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.demo-flag{background:#1a1a1a;color:#ffd166;text-align:center;font-size:11px;font-weight:700;padding:5px;letter-spacing:0.04em;text-transform:uppercase}
+
+.masthead{background-color:#121212;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand)}
+.pagehead{max-width:1200px;margin:0 auto;padding:20px 28px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.back-link{color:rgba(255,255,255,0.6);font-size:11.5px;font-weight:700;margin-left:auto}
+.ph-top{display:flex;align-items:center;gap:16px}
+h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:#fff;margin-top:14px}
+.ph-sub{font-size:12.5px;color:rgba(255,255,255,0.6);margin-top:4px;max-width:680px;line-height:1.5}
+
+.app{max-width:1100px;margin:0 auto;padding:20px 28px 60px}
+.picker-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.picker{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);padding:14px}
+.picker-label{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.picker-label.a{color:var(--a)}
+.picker-label.b{color:var(--b)}
+.picker select{width:100%;height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 28px 0 11px;font:inherit;font-size:12.5px;
+  font-weight:600;background:var(--surface-2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+  cursor:pointer;appearance:none;margin-bottom:8px}
+.picker-meta{font-size:11px;color:var(--muted)}
+
+.card{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);padding:24px;display:flex;gap:30px;align-items:center;flex-wrap:wrap;justify-content:center}
+.radar-svg{flex-shrink:0}
+.legend{display:flex;flex-direction:column;gap:10px;min-width:220px}
+.leg-row{display:flex;align-items:center;gap:10px}
+.leg-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.leg-name{font-weight:700;font-size:12.5px}
+.leg-sub{font-size:10.5px;color:var(--muted)}
+.axis-table{width:100%;border-collapse:collapse;margin-top:6px}
+.axis-table td{padding:4px 0;font-size:11.5px}
+.axis-table td.axlbl{color:var(--muted);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.03em}
+.axis-table td.va{color:var(--a);font-weight:800;text-align:right;width:40px}
+.axis-table td.vb{color:var(--b);font-weight:800;text-align:right;width:40px}
+.empty{padding:60px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="demo-flag">DEMO &mdash; Team DNA (prototipo, no enlazado aun)</div>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="ph-top">
+      <div class="brand"><span class="brand-mark"><span class="x">x</span>Stats</span><span class="brand-sub">Team DNA</span></div>
+      <a class="back-link" href="fotmob_leaderboard.html">&larr; Volver al buscador</a>
+    </div>
+    <h1>El perfil de estilo de cada equipo</h1>
+    <p class="ph-sub">Promedio ponderado por minutos del radar Fotmob+Sofascore de cada plantilla. Compara el mismo equipo en dos temporadas distintas, o dos equipos en la misma temporada &mdash; la temporada es siempre parte de la comparacion.</p>
+  </div>
+</div>
+
+<div class="app">
+  <div class="picker-row">
+    <div class="picker">
+      <div class="picker-label a">Equipo A</div>
+      <select id="league-a"></select>
+      <select id="team-a"></select>
+      <select id="season-a"></select>
+      <div class="picker-meta" id="meta-a"></div>
+    </div>
+    <div class="picker">
+      <div class="picker-label b">Equipo B</div>
+      <select id="league-b"></select>
+      <select id="team-b"></select>
+      <select id="season-b"></select>
+      <div class="picker-meta" id="meta-b"></div>
+    </div>
+  </div>
+  <div class="card" id="radar-card"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const AXES = [['att','Ataque'],['cre','Creatividad'],['tec','Tecnica'],['def','Defensa'],['tac','Tactica']];
+let DATA=[];
+
+fetch('data/teamdna_index.json').then(r=>r.json()).then(d=>{
+  DATA = d;
+  setupSide('a'); setupSide('b');
+  // default: same team, two different seasons, if a well-known example exists
+  const byTeam = {};
+  DATA.forEach(r=>{ const k=r.league+'|'+r.team; (byTeam[k]=byTeam[k]||[]).push(r.season); });
+  const preferred = ['Premier League|Liverpool','LaLiga|Real Madrid','Premier League|Arsenal'];
+  let defKey = preferred.find(k=>byTeam[k] && byTeam[k].length>=2);
+  if(!defKey) defKey = Object.keys(byTeam).find(k=>byTeam[k].length>=2) || Object.keys(byTeam)[0];
+  const [defLeague, defTeam] = defKey.split('|');
+  $('league-a').value = defLeague; populateTeams('a'); $('team-a').value = defTeam; populateSeasons('a');
+  $('league-b').value = defLeague; populateTeams('b'); $('team-b').value = defTeam; populateSeasons('b');
+  render();
+});
+
+function setupSide(side){
+  const leagues=[...new Set(DATA.map(r=>r.league))].sort();
+  $(`league-${side}`).innerHTML = leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
+  $(`league-${side}`).addEventListener('change', ()=>{ populateTeams(side); render(); });
+  $(`team-${side}`).addEventListener('change', ()=>{ populateSeasons(side); render(); });
+  $(`season-${side}`).addEventListener('change', render);
+  populateTeams(side);
+}
+
+function populateTeams(side){
+  const lg = $(`league-${side}`).value;
+  const teams = [...new Set(DATA.filter(r=>r.league===lg).map(r=>r.team))].sort();
+  $(`team-${side}`).innerHTML = teams.map(t=>`<option value="${t}">${t}</option>`).join('');
+  populateSeasons(side);
+}
+
+function populateSeasons(side){
+  const lg = $(`league-${side}`).value, team = $(`team-${side}`).value;
+  const seasons = DATA.filter(r=>r.league===lg && r.team===team).map(r=>r.season).sort().reverse();
+  const sel = $(`season-${side}`);
+  const keep = side==='b' && seasons.length>1 ? seasons[1] : seasons[0];
+  sel.innerHTML = seasons.map(s=>`<option value="${s}" ${s===keep?'selected':''}>${s}</option>`).join('');
+}
+
+function getRow(side){
+  const lg=$(`league-${side}`).value, team=$(`team-${side}`).value, season=$(`season-${side}`).value;
+  return DATA.find(r=>r.league===lg && r.team===team && r.season===season);
+}
+
+function render(){
+  const ra = getRow('a'), rb = getRow('b');
+  $('meta-a').textContent = ra ? `${ra.n_players} jugadores · edad media ${ra.avg_age}` : '';
+  $('meta-b').textContent = rb ? `${rb.n_players} jugadores · edad media ${rb.avg_age}` : '';
+
+  if(!ra && !rb){ $('radar-card').innerHTML = `<div class="empty">Sin datos suficientes para este equipo/temporada (se necesitan al menos 5 jugadores con radar y 180+ minutos).</div>`; return; }
+
+  const SIZE=300, CX=SIZE/2, CY=SIZE/2, R=110, N=5;
+  const angle = i => -Math.PI/2 + i*(2*Math.PI/N);
+  const pt = (i,frac) => [CX + Math.cos(angle(i))*R*frac, CY + Math.sin(angle(i))*R*frac];
+  let grid = '';
+  [0.25,0.5,0.75,1].forEach(frac=>{
+    const pts = AXES.map((_,i)=>pt(i,frac).join(',')).join(' ');
+    grid += `<polygon points="${pts}" fill="none" stroke="#e2e2de" stroke-width="1"/>`;
+  });
+  AXES.forEach((_,i)=>{
+    const [x,y]=pt(i,1);
+    grid += `<line x1="${CX}" y1="${CY}" x2="${x}" y2="${y}" stroke="#e2e2de" stroke-width="1"/>`;
+  });
+  const labels = AXES.map(([k,lbl],i)=>{
+    const [x,y]=pt(i,1.26);
+    const anchor = Math.abs(Math.cos(angle(i)))<0.3 ? 'middle' : (Math.cos(angle(i))>0?'start':'end');
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle" font-size="11.5" font-weight="700" fill="#4a4a4a" font-family="Roboto">${lbl}</text>`;
+  }).join('');
+
+  function poly(row, color){
+    if(!row) return '';
+    const pts = AXES.map(([k],i)=>pt(i, Math.max(0,Math.min(100,row.radar[k]))/100));
+    const dots = pts.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" stroke="#fff" stroke-width="1.5"/>`).join('');
+    return `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="${color}" fill-opacity="0.18" stroke="${color}" stroke-width="2.2" stroke-linejoin="round"/>${dots}`;
+  }
+
+  const svg = `<svg class="radar-svg" width="${SIZE+70}" height="${SIZE+30}" viewBox="-35 -15 ${SIZE+70} ${SIZE+30}">
+    ${grid}${poly(rb,'#ea3323')}${poly(ra,'#1f4ea8')}${labels}
+  </svg>`;
+
+  const rows = AXES.map(([k,lbl])=>`<tr><td class="axlbl">${lbl}</td><td class="va">${ra?ra.radar[k]:'—'}</td><td class="vb">${rb?rb.radar[k]:'—'}</td></tr>`).join('');
+  const legend = `<div class="legend">
+    <div class="leg-row"><div class="leg-dot" style="background:#1f4ea8"></div><div><div class="leg-name">${ra?ra.team:'—'}</div><div class="leg-sub">${ra?ra.season:''}</div></div></div>
+    <div class="leg-row"><div class="leg-dot" style="background:#ea3323"></div><div><div class="leg-name">${rb?rb.team:'—'}</div><div class="leg-sub">${rb?rb.season:''}</div></div></div>
+    <table class="axis-table"><tbody>${rows}</tbody></table>
+  </div>`;
+
+  $('radar-card').innerHTML = svg + legend;
+}
+</script>
+</body>
+</html>

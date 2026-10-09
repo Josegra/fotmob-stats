@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Breakout Tracker (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#1a8a4a; --brand-ink:#13693a; --brand-wash:#e8f7ee;
+  --up:#1a8a4a; --up-wash:#e8f7ee; --down:#d6362a; --down-wash:#fdeceb;
+  --prev:#9a9a93; --cur:#1a8a4a;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.demo-flag{background:#1a1a1a;color:#ffd166;text-align:center;font-size:11px;font-weight:700;padding:5px;letter-spacing:0.04em;text-transform:uppercase}
+
+.masthead{background-color:#121212;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand)}
+.pagehead{max-width:1200px;margin:0 auto;padding:20px 28px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.back-link{color:rgba(255,255,255,0.6);font-size:11.5px;font-weight:700;margin-left:auto}
+.ph-top{display:flex;align-items:center;gap:16px}
+h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:#fff;margin-top:14px}
+.ph-sub{font-size:12.5px;color:rgba(255,255,255,0.6);margin-top:4px;max-width:680px;line-height:1.5}
+
+.app{max-width:1200px;margin:0 auto;padding:20px 28px 60px}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.toolbar select{height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 28px 0 11px;font:inherit;font-size:12.5px;
+  font-weight:600;background:var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+  cursor:pointer;appearance:none}
+.season-pill{background:var(--brand-wash);color:var(--brand-ink);font-size:11px;font-weight:800;padding:7px 12px;border-radius:20px;white-space:nowrap}
+.sort-row{margin-left:auto;display:flex;gap:6px}
+.sort-btn{background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;padding:0 14px;height:38px;font:inherit;font-size:12px;font-weight:700;color:var(--ink-2);cursor:pointer}
+.sort-btn.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.ccard{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);
+  padding:14px;cursor:pointer;transition:transform .1s}
+.ccard:hover{transform:translateY(-1px)}
+.ctop{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--surface-2);flex-shrink:0;border:1px solid var(--line)}
+.avatar-ph{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;color:#fff}
+.cname{font-weight:700;font-size:13px}
+.cteam{font-size:10.5px;color:var(--muted)}
+.cseasons{margin-left:auto;text-align:right;font-size:10px;color:var(--muted);font-weight:700}
+.crow{display:grid;grid-template-columns:52px 1fr 1fr;align-items:center;gap:8px;font-size:11px;margin-bottom:5px}
+.crow .lbl{font-weight:800;color:var(--muted);font-size:9.5px;text-transform:uppercase;letter-spacing:.03em}
+.cbar-wrap{display:flex;flex-direction:column;gap:2px}
+.cbar-line{display:flex;align-items:center;gap:5px}
+.cbar-track{flex:1;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.cbar-fill{height:100%;border-radius:3px}
+.cbar-fill.prev{background:var(--prev)}
+.cbar-fill.cur{background:var(--cur)}
+.cbar-val{font-size:10px;font-weight:700;width:30px;text-align:right}
+.cfoot{margin-top:10px;display:flex;align-items:center;justify-content:space-between}
+.delta-badge{font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:3px}
+.delta-badge.up{background:var(--up-wash);color:var(--up)}
+.delta-badge.down{background:var(--down-wash);color:var(--down)}
+.score{font-size:10px;color:var(--muted);font-weight:700}
+.empty{padding:60px;text-align:center;color:var(--muted);font-size:13px;grid-column:1/-1}
+</style>
+</head>
+<body>
+<div class="demo-flag">DEMO &mdash; Breakout Tracker (prototipo, no enlazado aun)</div>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="ph-top">
+      <div class="brand"><span class="brand-mark"><span class="x">x</span>Stats</span><span class="brand-sub">Breakout Tracker</span></div>
+      <a class="back-link" href="fotmob_leaderboard.html">&larr; Volver al buscador</a>
+    </div>
+    <h1>&iquest;Quien esta dando el salto esta temporada?</h1>
+    <p class="ph-sub" id="count-sub">Compara el rating y la produccion por partido de cada jugador entre su temporada anterior y la actual.</p>
+  </div>
+</div>
+
+<div class="app">
+  <div class="toolbar">
+    <select id="league-sel"><option value="">Todas las ligas</option></select>
+    <select id="pair-sel"><option value="">Cualquier transicion de temporada</option></select>
+    <select id="minmp-sel">
+      <option value="0">Cualquier minutaje</option>
+      <option value="5" selected>5+ partidos en ambas</option>
+      <option value="10">10+ partidos en ambas</option>
+    </select>
+    <div class="sort-row">
+      <button class="sort-btn on" data-sort="up">Mas en alza</button>
+      <button class="sort-btn" data-sort="down">Mas en caida</button>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const AVATAR_BG = ['#1f4ea8','#0f7a4e','#b3261e','#92660c','#6d3fae','#1a7f8e','#a1472e','#3a5a9e'];
+function avatarColor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))>>>0; return AVATAR_BG[h%AVATAR_BG.length]; }
+
+let DATA=[], SORT='up';
+
+fetch('data/breakout_index.json').then(r=>r.json()).then(d=>{
+  DATA = d;
+  $('count-sub').textContent = `${DATA.length.toLocaleString()} jugadores con al menos dos temporadas comparables (fotmob rating, minimo 5 partidos y stats registradas en ambas).`;
+  const leagues=[...new Set(DATA.map(p=>p.league).filter(Boolean))].sort();
+  $('league-sel').innerHTML += leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
+  const pairs=[...new Set(DATA.map(p=>`${p.season_prev}|${p.season_cur}`))].sort();
+  $('pair-sel').innerHTML += pairs.map(p=>{ const [a,b]=p.split('|'); return `<option value="${p}">${a} &rarr; ${b}</option>`; }).join('');
+  ['league-sel','pair-sel','minmp-sel'].forEach(id=>$(id).addEventListener('change', render));
+  document.querySelectorAll('.sort-btn').forEach(b=>b.addEventListener('click',()=>{
+    SORT=b.dataset.sort;
+    document.querySelectorAll('.sort-btn').forEach(x=>x.classList.toggle('on',x===b));
+    render();
+  }));
+  render();
+});
+
+function render(){
+  const lg = $('league-sel').value;
+  const pair = $('pair-sel').value;
+  const minMp = +$('minmp-sel').value;
+  let rows = DATA.filter(p=>
+    (!lg || p.league===lg) &&
+    (!pair || `${p.season_prev}|${p.season_cur}`===pair) &&
+    p.mp_cur>=minMp && p.mp_prev>=minMp
+  );
+  rows.sort((a,b)=> SORT==='up' ? b.score-a.score : a.score-b.score);
+  rows = rows.slice(0,60);
+
+  if(!rows.length){ $('grid').innerHTML = `<div class="empty">Sin jugadores para este filtro.</div>`; return; }
+
+  const maxR = 10;
+  $('grid').innerHTML = rows.map(p=>{
+    const initials=(p.name||'?').split(' ').map(s=>s[0]).filter(Boolean).slice(-2).join('');
+    const avCol = avatarColor(p.name);
+    const photoHtml = p.photo ? `<img class="avatar" src="${p.photo}" onerror="this.outerHTML='<div class=\\'avatar-ph\\' style=\\'background:${avCol}\\'>${initials}</div>'">`
+      : `<div class="avatar-ph" style="background:${avCol}">${initials}</div>`;
+    const cls = p.rating_delta>=0 ? 'up' : 'down';
+    const row = (lbl, prevV, curV, max) => `
+      <div class="crow">
+        <div class="lbl">${lbl}</div>
+        <div class="cbar-line"><div class="cbar-track"><div class="cbar-fill prev" style="width:${Math.min(100,prevV/max*100)}%"></div></div><div class="cbar-val">${prevV}</div></div>
+        <div class="cbar-line"><div class="cbar-track"><div class="cbar-fill cur" style="width:${Math.min(100,curV/max*100)}%"></div></div><div class="cbar-val">${curV}</div></div>
+      </div>`;
+    return `<div class="ccard" onclick="location.href='fotmob_player.html?id=${p.id}'">
+      <div class="ctop">${photoHtml}<div><div class="cname">${p.name}</div><div class="cteam">${p.team||'—'} &middot; ${p.league||''}</div></div>
+        <div class="cseasons">${p.season_prev}<br>${p.season_cur}</div></div>
+      <div class="cbar-wrap">
+        ${row('RATING', p.rating_prev.toFixed(2), p.rating_cur.toFixed(2), maxR)}
+        ${row('GOL/PJ', p.gpm_prev.toFixed(2), p.gpm_cur.toFixed(2), 1.2)}
+        ${row('AST/PJ', p.apm_prev.toFixed(2), p.apm_cur.toFixed(2), 1.2)}
+      </div>
+      <div class="cfoot">
+        <span class="delta-badge ${cls}">${p.rating_delta>=0?'+':''}${p.rating_delta} rating</span>
+        <span class="score">indice ${p.score}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
