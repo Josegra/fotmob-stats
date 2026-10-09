@@ -134,7 +134,8 @@ h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;colo
 const $=id=>document.getElementById(id);
 const AXES_CATS = ['Attacking', 'Attacking (Fotmob)', 'Attacking (Sofascore)'];
 
-const DEFAULT_MODEL = { groq: 'llama-3.3-70b-versatile', openai: 'gpt-4o-mini' };
+const DEFAULT_MODEL = { groq: 'meta-llama/llama-4-scout-17b-16e-instruct', openai: 'gpt-4o-mini' };
+const STALE_MODELS = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'mixtral-8x7b-32768'];
 const BASE_URL = { groq: 'https://api.groq.com/openai/v1', openai: 'https://api.openai.com/v1' };
 
 let DATA=[], SEASONS=[], LEAGUES=[];
@@ -146,11 +147,16 @@ fetch('data/merged_index.json').then(r=>r.json()).then(d=>{
 });
 
 // ---------- settings persistence ----------
+function resolveModel(provider){
+  const stored = localStorage.getItem('xstats_llm_model_'+provider);
+  if(!stored || STALE_MODELS.includes(stored)) return DEFAULT_MODEL[provider];
+  return stored;
+}
 function loadSettings(){
   const provider = localStorage.getItem('xstats_llm_provider') || 'groq';
   $('provider-sel').value = provider;
   $('apikey-input').value = localStorage.getItem('xstats_llm_key_'+provider) || '';
-  $('model-input').value = localStorage.getItem('xstats_llm_model_'+provider) || DEFAULT_MODEL[provider];
+  $('model-input').value = resolveModel(provider);
   updateConnStatus();
 }
 function updateConnStatus(){
@@ -162,7 +168,7 @@ function updateConnStatus(){
 $('provider-sel').addEventListener('change', ()=>{
   const provider = $('provider-sel').value;
   $('apikey-input').value = localStorage.getItem('xstats_llm_key_'+provider) || '';
-  $('model-input').value = localStorage.getItem('xstats_llm_model_'+provider) || DEFAULT_MODEL[provider];
+  $('model-input').value = resolveModel(provider);
   updateConnStatus();
 });
 $('apikey-input').addEventListener('input', ()=>{
