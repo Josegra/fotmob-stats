@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Market Movers (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#ea3323; --brand-ink:#b31c10; --brand-wash:#fdeceb;
+  --hover-wash:#eaf4fd; --hover-ink:#1557b0;
+  --up:#1a8a4a; --up-wash:#e8f7ee; --down:#d6362a; --down-wash:#fdeceb;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.demo-flag{background:#1a1a1a;color:#ffd166;text-align:center;font-size:11px;font-weight:700;padding:5px;letter-spacing:0.04em;text-transform:uppercase}
+
+.masthead{background-color:#121212;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand)}
+.pagehead{max-width:1200px;margin:0 auto;padding:20px 28px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.back-link{color:rgba(255,255,255,0.6);font-size:11.5px;font-weight:700;margin-left:auto}
+.ph-top{display:flex;align-items:center;gap:16px}
+h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:#fff;margin-top:14px}
+.ph-sub{font-size:12.5px;color:rgba(255,255,255,0.6);margin-top:4px}
+
+.app{max-width:1200px;margin:0 auto;padding:20px 28px 60px}
+.tabs{display:flex;gap:4px;margin-bottom:14px}
+.tab{background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;padding:0 18px;height:38px;
+  font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);cursor:pointer}
+.tab.on{background:var(--brand-ink);border-color:var(--brand-ink);color:#fff}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.toolbar select{height:36px;border:1px solid var(--line-strong);border-radius:4px;padding:0 28px 0 10px;font:inherit;font-size:12.5px;
+  font-weight:600;background:var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 9px center;
+  cursor:pointer;appearance:none}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.mcard{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);
+  padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .1s}
+.mcard:hover{transform:translateY(-1px)}
+.rank{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--muted);width:26px;flex-shrink:0;text-align:center}
+.avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--surface-2);flex-shrink:0;border:1px solid var(--line)}
+.avatar-ph{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:#fff}
+.minfo{flex:1;min-width:0}
+.mname{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mteam{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mvals{text-align:right;flex-shrink:0}
+.mnow{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800}
+.mdelta{font-size:11px;font-weight:700;padding:1px 6px;border-radius:3px;margin-top:2px;display:inline-block}
+.mdelta.up{color:var(--up);background:var(--up-wash)}
+.mdelta.down{color:var(--down);background:var(--down-wash)}
+.empty{padding:60px;text-align:center;color:var(--muted);font-size:13px;grid-column:1/-1}
+</style>
+</head>
+<body>
+<div class="demo-flag">DEMO &mdash; Mayores Subidas/Bajadas de Valor (prototipo, no enlazado aún desde la navegación)</div>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="ph-top">
+      <div class="brand"><span class="brand-mark"><span class="x">x</span>Stats</span><span class="brand-sub">Market Movers</span></div>
+      <a class="back-link" href="fotmob_leaderboard.html">&larr; Volver al buscador</a>
+    </div>
+    <h1>Mayores subidas y bajadas de valor</h1>
+    <p class="ph-sub" id="count-sub"></p>
+  </div>
+</div>
+
+<div class="app">
+  <div class="tabs">
+    <button class="tab on" data-dir="up" onclick="setDir('up',this)">📈 Subidas</button>
+    <button class="tab" data-dir="down" onclick="setDir('down',this)">📉 Bajadas</button>
+  </div>
+  <div class="toolbar">
+    <select id="league-sel"><option value="">Todas las ligas</option></select>
+    <select id="metric-sel">
+      <option value="delta_pct">Ordenar por % de cambio</option>
+      <option value="delta">Ordenar por cambio absoluto (€)</option>
+    </select>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const AVATAR_BG = ['#1f4ea8','#0f7a4e','#b3261e','#92660c','#6d3fae','#1a7f8e','#a1472e','#3a5a9e'];
+function avatarColor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))>>>0; return AVATAR_BG[h%AVATAR_BG.length]; }
+function fmtM(v){ if(v==null) return '—'; const a=Math.abs(v);
+  if(a>=1e6) return '€'+(v/1e6).toFixed(1)+'M'; if(a>=1e3) return '€'+(v/1e3).toFixed(0)+'K'; return '€'+v; }
+
+let DATA=[], DIR='up';
+
+fetch('data/movers_index.json').then(r=>r.json()).then(d=>{
+  DATA = d.filter(p=>Math.abs(p.delta)>0);
+  $('count-sub').textContent = `${DATA.length.toLocaleString()} jugadores con historial de valoración suficiente para medir cambio`;
+  const leagues=[...new Set(DATA.map(p=>p.league).filter(Boolean))].sort();
+  $('league-sel').innerHTML += leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
+  $('league-sel').addEventListener('change', render);
+  $('metric-sel').addEventListener('change', render);
+  render();
+});
+
+function setDir(dir, btn){
+  DIR = dir;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on', b===btn));
+  render();
+}
+
+function render(){
+  const lg = $('league-sel').value;
+  const metric = $('metric-sel').value;
+  let rows = DATA.filter(p=>!lg || p.league===lg);
+  rows = rows.filter(p=> DIR==='up' ? p.delta>0 : p.delta<0);
+  rows.sort((a,b)=> DIR==='up' ? b[metric]-a[metric] : a[metric]-b[metric]);
+  rows = rows.slice(0,60);
+
+  if(!rows.length){ $('grid').innerHTML = `<div class="empty">Sin resultados para este filtro.</div>`; return; }
+
+  $('grid').innerHTML = rows.map((p,i)=>{
+    const initials=(p.name||'?').split(' ').map(s=>s[0]).filter(Boolean).slice(-2).join('');
+    const avCol = avatarColor(p.name);
+    const photoHtml = p.photo ? `<img class="avatar" src="${p.photo}" onerror="this.outerHTML='<div class=\\'avatar-ph\\' style=\\'background:${avCol}\\'>${initials}</div>'">`
+      : `<div class="avatar-ph" style="background:${avCol}">${initials}</div>`;
+    const cls = p.delta>=0?'up':'down';
+    const arrow = p.delta>=0?'▲':'▼';
+    return `<div class="mcard" onclick="location.href='fotmob_player.html?id=${p.id}'">
+      <div class="rank">${i+1}</div>
+      ${photoHtml}
+      <div class="minfo">
+        <div class="mname">${p.name}</div>
+        <div class="mteam">${p.team||'—'} · ${p.league||''}</div>
+      </div>
+      <div class="mvals">
+        <div class="mnow">${fmtM(p.last_value)}</div>
+        <div class="mdelta ${cls}">${arrow} ${Math.abs(p.delta_pct)}% · ${fmtM(Math.abs(p.delta))}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

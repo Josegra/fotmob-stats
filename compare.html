@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Compare Players (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#ea3323; --brand-ink:#b31c10; --brand-wash:#fdeceb;
+  --a-color:#1f4ea8; --a-wash:#eaf1fc; --b-color:#b31c10; --b-wash:#fdeceb;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.demo-flag{background:#1a1a1a;color:#ffd166;text-align:center;font-size:11px;font-weight:700;padding:5px;letter-spacing:0.04em;text-transform:uppercase}
+
+.masthead{background-color:#121212;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand)}
+.pagehead{max-width:1100px;margin:0 auto;padding:20px 28px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.back-link{color:rgba(255,255,255,0.6);font-size:11.5px;font-weight:700;margin-left:auto}
+.ph-top{display:flex;align-items:center;gap:16px}
+
+.app{max-width:1100px;margin:0 auto;padding:20px 28px 60px}
+
+.picker-row{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start;margin-bottom:16px}
+.picker-box{position:relative}
+.picker-input{width:100%;height:44px;border:2px solid var(--line-strong);border-radius:6px;padding:0 14px;font:inherit;font-size:14px;font-weight:600}
+.picker-box.a .picker-input:focus{outline:none;border-color:var(--a-color)}
+.picker-box.b .picker-input:focus{outline:none;border-color:var(--b-color)}
+.vs{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--muted);align-self:center;padding-top:10px}
+.sr-pop{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--line);
+  border-radius:4px;box-shadow:var(--shadow-card);max-height:280px;overflow-y:auto;display:none;z-index:50}
+.sr-pop.show{display:block}
+.sr-row{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer}
+.sr-row:hover{background:var(--surface-2)}
+.sr-name{font-size:12.5px;font-weight:600}
+.sr-sub{font-size:10.5px;color:var(--muted)}
+
+.hero-row{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;margin-bottom:16px}
+.phero{background:var(--surface);border:1px solid var(--line-strong);border-radius:6px;box-shadow:var(--shadow-card);padding:18px;
+  display:flex;align-items:center;gap:14px;border-top:4px solid var(--c)}
+.phero.a{--c:var(--a-color)}
+.phero.b{--c:var(--b-color)}
+.phero img,.phero .ph{width:64px;height:64px;border-radius:8px;object-fit:cover;background:var(--surface-2);flex-shrink:0;border:1px solid var(--line)}
+.phero .ph{display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--c)}
+.pname{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;line-height:1.1}
+.pmeta{font-size:11px;color:var(--muted);margin-top:3px}
+.prating{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--c);margin-left:auto;text-align:center}
+.prating .l{font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+.vmid{align-self:center;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:var(--muted)}
+
+.empty-pick{padding:80px 20px;text-align:center;color:var(--muted);font-size:13px}
+
+.cat-tabs{display:flex;gap:4px;flex-wrap:wrap;padding:10px 0;margin-bottom:6px}
+.cat-tab{background:var(--surface);border:1px solid var(--line-strong);border-radius:4px;padding:0 13px;height:30px;
+  font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-2);cursor:pointer}
+.cat-tab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+.card{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);padding:6px 20px}
+.vrow{display:grid;grid-template-columns:1fr 90px 1fr;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.vrow:last-child{border-bottom:none}
+.vtrack{height:8px;border-radius:4px;background:var(--surface-2);position:relative;overflow:hidden}
+.vtrack.a{direction:rtl}
+.vfill{height:100%;border-radius:4px}
+.vfill.a{background:var(--a-color)}
+.vfill.b{background:var(--b-color)}
+.vval{font-size:11.5px;font-weight:800;text-align:center;white-space:nowrap}
+.vlabel{font-size:10.5px;font-weight:700;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:0.04em}
+.vside{display:flex;flex-direction:column;gap:3px}
+.vside.a{align-items:flex-end}
+.vside.b{align-items:flex-start}
+</style>
+</head>
+<body>
+<div class="demo-flag">DEMO &mdash; Comparador de Jugadores (prototipo, no enlazado aún desde la navegación)</div>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="ph-top">
+      <div class="brand"><span class="brand-mark"><span class="x">x</span>Stats</span><span class="brand-sub">Compare Players</span></div>
+      <a class="back-link" href="fotmob_leaderboard.html">&larr; Volver al buscador</a>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="picker-row">
+    <div class="picker-box a">
+      <input class="picker-input" id="search-a" placeholder="Buscar jugador A…" autocomplete="off">
+      <div class="sr-pop" id="pop-a"></div>
+    </div>
+    <div class="vs">VS</div>
+    <div class="picker-box b">
+      <input class="picker-input" id="search-b" placeholder="Buscar jugador B…" autocomplete="off">
+      <div class="sr-pop" id="pop-b"></div>
+    </div>
+  </div>
+  <div id="content"><div class="empty-pick">Elige dos jugadores arriba para compararlos.</div></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+function fmtNum(v,d=0){ return v==null ? '—' : (+v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+function fmtM(v){ if(v==null) return '—'; const a=Math.abs(v);
+  if(a>=1e6) return '€'+(v/1e6).toFixed(1)+'M'; if(a>=1e3) return '€'+(v/1e3).toFixed(0)+'K'; return '€'+v; }
+
+let INDEX=null, PA=null, PB=null, ACTIVE_CAT=null;
+
+function loadIndex(){
+  if(INDEX) return Promise.resolve(INDEX);
+  return fetch('data/fotmob_index.json').then(r=>r.json()).then(d=>{ INDEX=d.filter(p=>typeof p.id==='number'); return INDEX; });
+}
+
+function wireSearch(side){
+  const inp=$('search-'+side), pop=$('pop-'+side);
+  let debounce;
+  inp.addEventListener('focus', loadIndex);
+  inp.addEventListener('input', ()=>{
+    clearTimeout(debounce);
+    debounce=setTimeout(()=>{
+      const q=inp.value.trim().toLowerCase();
+      if(q.length<2){ pop.classList.remove('show'); return; }
+      loadIndex().then(idx=>{
+        const res=idx.filter(p=>p.name&&p.name.toLowerCase().includes(q)).slice(0,10);
+        pop.innerHTML = res.map(p=>`<div class="sr-row" data-id="${p.id}"><div><div class="sr-name">${p.name}</div><div class="sr-sub">${p.team||''} · ${p.league||''}</div></div></div>`).join('')
+          || `<div class="sr-row" style="color:var(--muted)">Sin resultados</div>`;
+        pop.querySelectorAll('.sr-row[data-id]').forEach(row=>{
+          row.addEventListener('click', ()=>{
+            const p = idx.find(x=>String(x.id)===row.dataset.id);
+            inp.value = p.name;
+            pop.classList.remove('show');
+            selectPlayer(side, p.id);
+          });
+        });
+        pop.classList.add('show');
+      });
+    },150);
+  });
+  document.addEventListener('click', e=>{ if(!e.target.closest('.picker-box.'+side)) pop.classList.remove('show'); });
+}
+wireSearch('a'); wireSearch('b');
+
+function selectPlayer(side, id){
+  fetch(`data/fotmob/${id}.json`).then(r=>r.json()).then(d=>{
+    if(side==='a') PA=d; else PB=d;
+    if(PA && PB){ ACTIVE_CAT = ACTIVE_CAT || PA.stats[0].group; renderAll(); }
+  });
+}
+
+function renderAll(){
+  const a=PA.bio, b=PB.bio;
+  const heroHtml = (p,side)=>`
+    <div class="phero ${side}">
+      ${p.photo_url?`<img src="${p.photo_url}" onerror="this.outerHTML='<div class=\\'ph\\'>${(p.name||'?').split(' ').map(s=>s[0]).slice(-2).join('')}</div>'">`:`<div class="ph">${(p.name||'?').split(' ').map(s=>s[0]).slice(-2).join('')}</div>`}
+      <div>
+        <div class="pname">${p.name}</div>
+        <div class="pmeta">${p.team||'—'} · ${p.position||''} · ${fmtNum(p.age)} años</div>
+        <div class="pmeta">${fmtM(p.market_value_eur)}</div>
+      </div>
+      <div class="prating">${p.fotmob_rating??'—'}<div class="l">Rating</div></div>
+    </div>`;
+
+  const cats = [...new Set([...PA.stats.map(g=>g.group), ...PB.stats.map(g=>g.group)])];
+  if(!cats.includes(ACTIVE_CAT)) ACTIVE_CAT = cats[0];
+
+  $('content').innerHTML = `
+    <div class="hero-row">
+      ${heroHtml(a,'a')}
+      <div class="vmid">VS</div>
+      ${heroHtml(b,'b')}
+    </div>
+    <div class="cat-tabs">${cats.map(c=>`<button class="cat-tab ${c===ACTIVE_CAT?'on':''}" data-c="${c.replace(/"/g,'&quot;')}">${c}</button>`).join('')}</div>
+    <div class="card" id="vrows"></div>
+  `;
+  document.querySelectorAll('.cat-tab').forEach(btn=>btn.addEventListener('click',()=>{ ACTIVE_CAT=btn.dataset.c; renderAll(); }));
+  renderRows();
+}
+
+function renderRows(){
+  const groupA = PA.stats.find(g=>g.group===ACTIVE_CAT);
+  const groupB = PB.stats.find(g=>g.group===ACTIVE_CAT);
+  const metricsA = groupA ? groupA.metrics : [];
+  const byKeyB = {}; (groupB?groupB.metrics:[]).forEach(m=>byKeyB[m.key]=m);
+  const keys = metricsA.length ? metricsA.map(m=>m.key) : Object.keys(byKeyB);
+
+  $('vrows').innerHTML = keys.map(key=>{
+    const ma = metricsA.find(m=>m.key===key);
+    const mb = byKeyB[key];
+    const label = (ma||mb).label;
+    const va = ma? ma.val : null, vb = mb? mb.val : null;
+    const pa = ma && ma.pct!=null ? (ma.dir<0?100-ma.pct:ma.pct) : 0;
+    const pb = mb && mb.pct!=null ? (mb.dir<0?100-mb.pct:mb.pct) : 0;
+    const aWin = (va??-Infinity) >= (vb??-Infinity);
+    return `<div class="vrow">
+      <div class="vside a"><div class="vtrack a" style="width:100%"><div class="vfill a" style="width:${pa}%;margin-left:auto"></div></div><div class="vval" style="color:var(--a-color)">${fmtNum(va,va%1?2:0)}${aWin&&va!=null?' 🏆':''}</div></div>
+      <div class="vlabel">${label}</div>
+      <div class="vside b"><div class="vtrack" style="width:100%"><div class="vfill b" style="width:${pb}%"></div></div><div class="vval" style="color:var(--b-color)">${fmtNum(vb,vb%1?2:0)}${!aWin&&vb!=null?' 🏆':''}</div></div>
+    </div>`;
+  }).join('') || `<div class="empty-pick">Sin métricas en esta categoría para alguno de los dos.</div>`;
+}
+</script>
+</body>
+</html>

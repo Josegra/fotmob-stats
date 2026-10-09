@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Team Squad (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#ea3323; --brand-ink:#b31c10; --brand-wash:#fdeceb;
+  --hover-wash:#eaf4fd; --hover-ink:#1557b0;
+  --pos-fw-bg:#fde7e6; --pos-fw-ink:#b3261e;
+  --pos-mf-bg:#e8eefc; --pos-mf-ink:#1f4ea8;
+  --pos-df-bg:#e5f4ea; --pos-df-ink:#0f7a4e;
+  --pos-gk-bg:#fdf1db; --pos-gk-ink:#92660c;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.demo-flag{background:#1a1a1a;color:#ffd166;text-align:center;font-size:11px;font-weight:700;padding:5px;letter-spacing:0.04em;text-transform:uppercase}
+
+.masthead{background-color:#121212;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand)}
+.pagehead{max-width:1200px;margin:0 auto;padding:20px 28px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.back-link{color:rgba(255,255,255,0.6);font-size:11.5px;font-weight:700;margin-left:auto}
+.ph-top{display:flex;align-items:center;gap:16px}
+
+.app{max-width:1200px;margin:0 auto;padding:20px 28px 60px}
+.picker-card{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);padding:16px;margin-bottom:16px}
+.picker-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.picker-row label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+select#league-sel,select#team-sel{height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 30px 0 11px;font:inherit;font-size:13px;
+  font-weight:600;background:var(--surface-2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+  color:var(--ink);cursor:pointer;appearance:none;min-width:220px}
+
+.hero{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);
+  padding:22px 26px;display:flex;align-items:center;gap:20px;margin-bottom:16px;flex-wrap:wrap}
+.team-badge{width:64px;height:64px;border-radius:8px;background:linear-gradient(135deg,var(--brand-wash),#fff);
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;
+  font-size:24px;font-weight:800;color:var(--brand-ink);flex-shrink:0}
+.team-name{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;letter-spacing:-0.02em}
+.team-league{font-size:12.5px;color:var(--muted);margin-top:2px}
+.stat-tiles{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap}
+.stile{background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:10px 16px;text-align:center;min-width:84px}
+.stile .v{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;color:var(--ink)}
+.stile .l{font-size:8.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px}
+
+.card{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card)}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface);color:var(--muted);font-size:9.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;
+  padding:11px 12px;text-align:right;white-space:nowrap;cursor:pointer;border-bottom:1.5px solid var(--line-strong)}
+thead th:first-child,thead th:nth-child(2){text-align:left}
+thead th:hover{color:var(--hover-ink)}
+tbody tr{border-bottom:1px solid var(--line);cursor:pointer}
+tbody tr:hover{background:var(--hover-wash)}
+td{padding:9px 12px;font-size:12.5px;text-align:right;white-space:nowrap;color:var(--ink)}
+td.l{text-align:left}
+.pcell{display:flex;align-items:center;gap:10px}
+.avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--surface-2);flex-shrink:0;border:1px solid var(--line)}
+.avatar-ph{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;color:#fff}
+.pname{font-weight:700;font-size:12.5px}
+.postag{display:inline-flex;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+.rating-cell{font-weight:700;color:var(--brand-ink)}
+.empty{padding:60px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="demo-flag">DEMO &mdash; Página de Equipo (prototipo, no enlazada aún desde la navegación)</div>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="ph-top">
+      <div class="brand"><span class="brand-mark"><span class="x">x</span>Stats</span><span class="brand-sub">Team Squad</span></div>
+      <a class="back-link" href="fotmob_leaderboard.html">&larr; Volver al buscador</a>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="picker-card">
+    <div class="picker-row">
+      <label>Liga</label>
+      <select id="league-sel"><option value="">Todas</option></select>
+      <label>Equipo</label>
+      <select id="team-sel"><option value="">Selecciona un equipo&hellip;</option></select>
+    </div>
+  </div>
+  <div id="content"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const AVATAR_BG = ['#1f4ea8','#0f7a4e','#b3261e','#92660c','#6d3fae','#1a7f8e','#a1472e','#3a5a9e'];
+function avatarColor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))>>>0; return AVATAR_BG[h%AVATAR_BG.length]; }
+function fmtM(v){ if(v==null) return '—'; const a=Math.abs(v);
+  if(a>=1e6) return '€'+(v/1e6).toFixed(1)+'M'; if(a>=1e3) return '€'+(v/1e3).toFixed(0)+'K'; return '€'+v; }
+function fmtNum(v,d=0){ return v==null ? '—' : (+v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+const POS_STYLE = {
+  Striker:['var(--pos-fw-bg)','var(--pos-fw-ink)'],'Left Winger':['var(--pos-fw-bg)','var(--pos-fw-ink)'],'Right Winger':['var(--pos-fw-bg)','var(--pos-fw-ink)'],
+  'Centre-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Left-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Right-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],
+  'Left Wing-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],'Right Wing-Back':['var(--pos-df-bg)','var(--pos-df-ink)'],
+  'Goalkeeper':['var(--pos-gk-bg)','var(--pos-gk-ink)'],
+};
+function posStyle(p){ return POS_STYLE[p]||['var(--pos-mf-bg)','var(--pos-mf-ink)']; }
+function posAbbr(p){ if(!p) return '—'; if(p==='Goalkeeper') return 'GK'; if(p.includes('Back')) return 'DF'; if(p.includes('Midfield')) return 'MF'; return 'FW'; }
+
+let DATA=[], TEAMS={}, SORT_KEY='rating', SORT_DIR=-1;
+
+fetch('data/fotmob_index.json').then(r=>r.json()).then(d=>{
+  DATA = d.filter(p=>typeof p.id==='number'); // current season only
+  DATA.forEach(p=>{
+    if(!p.team) return;
+    const key = p.team+'|'+p.league;
+    if(!TEAMS[key]) TEAMS[key] = {team:p.team, league:p.league, players:[]};
+    TEAMS[key].players.push(p);
+  });
+  const leagues = [...new Set(Object.values(TEAMS).map(t=>t.league))].sort();
+  $('league-sel').innerHTML += leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
+  populateTeamSelect();
+  $('league-sel').addEventListener('change', populateTeamSelect);
+  $('team-sel').addEventListener('change', ()=>renderTeam($('team-sel').value));
+
+  const qs = new URLSearchParams(location.search);
+  const presetTeam = qs.get('team');
+  if(presetTeam){
+    const key = Object.keys(TEAMS).find(k=>TEAMS[k].team===presetTeam);
+    if(key){ $('team-sel').value = key; renderTeam(key); }
+  }
+});
+
+function populateTeamSelect(){
+  const lg = $('league-sel').value;
+  const keys = Object.keys(TEAMS).filter(k=>!lg || TEAMS[k].league===lg)
+    .sort((a,b)=>TEAMS[a].team.localeCompare(TEAMS[b].team));
+  $('team-sel').innerHTML = '<option value="">Selecciona un equipo…</option>' +
+    keys.map(k=>`<option value="${k}">${TEAMS[k].team} (${TEAMS[k].league})</option>`).join('');
+}
+
+function renderTeam(key){
+  if(!key){ $('content').innerHTML=''; return; }
+  const t = TEAMS[key];
+  const players = t.players;
+  const avgAge = players.reduce((s,p)=>s+(p.age||0),0)/players.filter(p=>p.age).length;
+  const totalMV = players.reduce((s,p)=>s+(p.mv||0),0);
+  const avgRating = players.filter(p=>p.rating!=null).reduce((s,p,_,arr)=>s+p.rating/arr.length,0);
+  const initials = t.team.split(' ').map(s=>s[0]).filter(Boolean).slice(0,2).join('');
+
+  $('content').innerHTML = `
+    <div class="hero">
+      <div class="team-badge">${initials}</div>
+      <div>
+        <div class="team-name">${t.team}</div>
+        <div class="team-league">${t.league} · ${players.length} jugadores</div>
+      </div>
+      <div class="stat-tiles">
+        <div class="stile"><div class="v">${players.length}</div><div class="l">Plantilla</div></div>
+        <div class="stile"><div class="v">${avgAge?avgAge.toFixed(1):'—'}</div><div class="l">Edad Prom.</div></div>
+        <div class="stile"><div class="v">${fmtM(totalMV)}</div><div class="l">Valor Total</div></div>
+        <div class="stile"><div class="v">${avgRating?avgRating.toFixed(2):'—'}</div><div class="l">Rating Prom.</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr id="thead-row"></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  buildHeader();
+  renderRows(players);
+}
+
+function buildHeader(){
+  const cols = [
+    {k:'name',label:'Jugador'},{k:'pos',label:'Pos'},{k:'age',label:'Edad'},
+    {k:'mp',label:'PJ'},{k:'mins',label:'Min'},{k:'rating',label:'Rating'},{k:'mv',label:'Valor'},
+  ];
+  $('thead-row').innerHTML = cols.map(c=>`<th class="${c.k==='name'?'l':''}" data-k="${c.k}">${c.label}</th>`).join('');
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const k = th.dataset.k;
+      if(SORT_KEY===k) SORT_DIR*=-1; else { SORT_KEY=k; SORT_DIR=-1; }
+      renderRows(TEAMS[$('team-sel').value].players);
+    });
+  });
+}
+
+function renderRows(players){
+  const sorted = [...players].sort((a,b)=>{
+    if(SORT_KEY==='name') return SORT_DIR*-1*(a.name||'').localeCompare(b.name||'');
+    const av=a[SORT_KEY]==null?-Infinity:a[SORT_KEY], bv=b[SORT_KEY]==null?-Infinity:b[SORT_KEY];
+    return SORT_DIR*(av-bv);
+  });
+  $('tbody').innerHTML = sorted.map(p=>{
+    const initials=(p.name||'?').split(' ').map(s=>s[0]).filter(Boolean).slice(-2).join('');
+    const avCol = avatarColor(p.name);
+    const photoHtml = p.photo ? `<img class="avatar" src="${p.photo}" onerror="this.outerHTML='<div class=\\'avatar-ph\\' style=\\'background:${avCol}\\'>${initials}</div>'">`
+      : `<div class="avatar-ph" style="background:${avCol}">${initials}</div>`;
+    const [pbg,pink] = posStyle(p.pos);
+    return `<tr onclick="location.href='fotmob_player.html?id=${p.id}'">
+      <td class="l"><div class="pcell">${photoHtml}<span class="pname">${p.name||'—'}</span></div></td>
+      <td><span class="postag" style="background:${pbg};color:${pink}">${posAbbr(p.pos)}</span></td>
+      <td>${fmtNum(p.age)}</td>
+      <td>${fmtNum(p.mp)}</td>
+      <td>${fmtNum(p.mins)}</td>
+      <td class="rating-cell">${p.rating!=null?p.rating.toFixed(2):'—'}</td>
+      <td>${fmtM(p.mv)}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" class="empty">Sin jugadores</td></tr>`;
+}
+</script>
+</body>
+</html>
