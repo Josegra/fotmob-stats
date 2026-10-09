@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Contract Watch (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#ea3323; --brand-ink:#b31c10; --brand-wash:#fdeceb;
+  --soon:#d6362a; --soon-wash:#fdeceb; --mid:#b8860b; --mid-wash:#fbf3e1; --far:#1a8a4a; --far-wash:#e8f7ee;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.demo-flag{background:#1a1a1a;color:#ffd166;text-align:center;font-size:11px;font-weight:700;padding:5px;letter-spacing:0.04em;text-transform:uppercase}
+
+.masthead{background-color:#121212;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand)}
+.pagehead{max-width:1200px;margin:0 auto;padding:20px 28px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.back-link{color:rgba(255,255,255,0.6);font-size:11.5px;font-weight:700;margin-left:auto}
+.ph-top{display:flex;align-items:center;gap:16px}
+h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:#fff;margin-top:14px}
+.ph-sub{font-size:12.5px;color:rgba(255,255,255,0.6);margin-top:4px}
+
+.app{max-width:1100px;margin:0 auto;padding:20px 28px 60px}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.toolbar select{height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 28px 0 11px;font:inherit;font-size:12.5px;
+  font-weight:600;background:var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+  cursor:pointer;appearance:none}
+
+.card{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card)}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface);color:var(--muted);font-size:9.5px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;
+  padding:11px 12px;text-align:right;white-space:nowrap;border-bottom:1.5px solid var(--line-strong)}
+thead th:first-child,thead th:nth-child(2){text-align:left}
+tbody tr{border-bottom:1px solid var(--line);cursor:pointer}
+tbody tr:hover{background:var(--hover-wash,#eaf4fd)}
+td{padding:9px 12px;font-size:12.5px;text-align:right;white-space:nowrap;color:var(--ink)}
+td.l{text-align:left}
+.pcell{display:flex;align-items:center;gap:10px}
+.avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--surface-2);flex-shrink:0;border:1px solid var(--line)}
+.avatar-ph{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;color:#fff}
+.pname{font-weight:700;font-size:12.5px}
+.badge{display:inline-flex;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:20px}
+.badge.soon{background:var(--soon-wash);color:var(--soon)}
+.badge.mid{background:var(--mid-wash);color:var(--mid)}
+.badge.far{background:var(--far-wash);color:var(--far)}
+.empty{padding:60px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="demo-flag">DEMO &mdash; Radar de Contratos (prototipo, no enlazado aún)</div>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="ph-top">
+      <div class="brand"><span class="brand-mark"><span class="x">x</span>Stats</span><span class="brand-sub">Contract Watch</span></div>
+      <a class="back-link" href="fotmob_leaderboard.html">&larr; Volver al buscador</a>
+    </div>
+    <h1>Contratos por vencer</h1>
+    <p class="ph-sub" id="count-sub"></p>
+  </div>
+</div>
+
+<div class="app">
+  <div class="toolbar">
+    <select id="league-sel"><option value="">Todas las ligas</option></select>
+    <select id="within-sel">
+      <option value="9999">Cualquier fecha</option>
+      <option value="6">Próximos 6 meses</option>
+      <option value="12" selected>Próximos 12 meses</option>
+      <option value="24">Próximos 24 meses</option>
+    </select>
+    <select id="minmins-sel">
+      <option value="0">Cualquier minutaje</option>
+      <option value="450" selected>450+ minutos</option>
+      <option value="900">900+ minutos</option>
+    </select>
+  </div>
+  <div class="card"><div style="overflow-x:auto"><table><thead><tr>
+    <th class="l">Jugador</th><th class="l">Equipo</th><th>Edad</th><th>Rating</th><th>Valor</th><th>Vence</th><th>Quedan</th>
+  </tr></thead><tbody id="tbody"></tbody></table></div></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const AVATAR_BG = ['#1f4ea8','#0f7a4e','#b3261e','#92660c','#6d3fae','#1a7f8e','#a1472e','#3a5a9e'];
+function avatarColor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))>>>0; return AVATAR_BG[h%AVATAR_BG.length]; }
+function fmtM(v){ if(v==null) return '—'; const a=Math.abs(v);
+  if(a>=1e6) return '€'+(v/1e6).toFixed(1)+'M'; if(a>=1e3) return '€'+(v/1e3).toFixed(0)+'K'; return '€'+v; }
+function fmtNum(v,d=0){ return v==null ? '—' : (+v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+
+let DATA=[];
+const NOW = new Date();
+
+fetch('data/bestxi_index.json').then(r=>r.json()).then(d=>{
+  DATA = d.filter(p=>p.contract_end).map(p=>{
+    const end = new Date(p.contract_end);
+    const months = (end - NOW)/(1000*60*60*24*30.44);
+    return {...p, months};
+  }).filter(p=>p.months>0);
+  $('count-sub').textContent = `${DATA.length.toLocaleString()} jugadores con fecha de contrato registrada`;
+  const leagues=[...new Set(DATA.map(p=>p.league).filter(Boolean))].sort();
+  $('league-sel').innerHTML += leagues.map(l=>`<option value="${l}">${l}</option>`).join('');
+  ['league-sel','within-sel','minmins-sel'].forEach(id=>$(id).addEventListener('change', render));
+  render();
+});
+
+function render(){
+  const lg = $('league-sel').value;
+  const within = +$('within-sel').value;
+  const minMins = +$('minmins-sel').value;
+  let rows = DATA.filter(p=> (!lg || p.league===lg) && p.months<=within && (p.mins||0)>=minMins);
+  rows.sort((a,b)=>a.months-b.months);
+  rows = rows.slice(0,100);
+
+  if(!rows.length){ $('tbody').innerHTML = `<tr><td colspan="7" class="empty">Sin jugadores para este filtro.</td></tr>`; return; }
+
+  $('tbody').innerHTML = rows.map(p=>{
+    const initials=(p.name||'?').split(' ').map(s=>s[0]).filter(Boolean).slice(-2).join('');
+    const avCol = avatarColor(p.name);
+    const photoHtml = p.photo ? `<img class="avatar" src="${p.photo}" onerror="this.outerHTML='<div class=\\'avatar-ph\\' style=\\'background:${avCol}\\'>${initials}</div>'">`
+      : `<div class="avatar-ph" style="background:${avCol}">${initials}</div>`;
+    const cls = p.months<=6?'soon':(p.months<=12?'mid':'far');
+    return `<tr onclick="location.href='fotmob_player.html?id=${p.id}'">
+      <td class="l"><div class="pcell">${photoHtml}<span class="pname">${p.name}</span></div></td>
+      <td class="l">${p.team||'—'}</td>
+      <td>${fmtNum(p.age)}</td>
+      <td>${p.rating!=null?p.rating.toFixed(2):'—'}</td>
+      <td>${fmtM(p.mv)}</td>
+      <td>${p.contract_end}</td>
+      <td><span class="badge ${cls}">${p.months.toFixed(0)} meses</span></td>
+    </tr>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

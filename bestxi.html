@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Best XI (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#ea3323; --brand-ink:#b31c10; --brand-wash:#fdeceb;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.demo-flag{background:#1a1a1a;color:#ffd166;text-align:center;font-size:11px;font-weight:700;padding:5px;letter-spacing:0.04em;text-transform:uppercase}
+
+.masthead{background-color:#121212;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand)}
+.pagehead{max-width:1200px;margin:0 auto;padding:20px 28px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.back-link{color:rgba(255,255,255,0.6);font-size:11.5px;font-weight:700;margin-left:auto}
+.ph-top{display:flex;align-items:center;gap:16px}
+
+.app{max-width:1200px;margin:0 auto;padding:20px 28px 60px;display:grid;grid-template-columns:320px 1fr;gap:16px}
+@media(max-width:900px){.app{grid-template-columns:1fr}}
+
+.panel{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);padding:18px;
+  align-self:start;position:sticky;top:16px}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
+.fld select,.fld input{width:100%;height:38px;border:1px solid var(--line-strong);border-radius:4px;padding:0 11px;font:inherit;font-size:13px;font-weight:600}
+.fld select{background:var(--surface-2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%23868da3" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 10px center;
+  cursor:pointer;appearance:none}
+.chk-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.chk-row input{width:16px;height:16px;accent-color:var(--brand-ink)}
+.chk-row label{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.form-btns{display:flex;flex-wrap:wrap;gap:6px}
+.fbtn{background:var(--surface-2);border:1px solid var(--line-strong);border-radius:4px;padding:7px 12px;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+.fbtn.on{background:var(--brand-ink);border-color:var(--brand-ink);color:#fff}
+.avg-box{margin-top:16px;padding:12px;background:var(--surface-2);border-radius:4px;text-align:center}
+.avg-box .v{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--brand-ink)}
+.avg-box .l{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em}
+
+.pitch-wrap{background:linear-gradient(180deg,#1a4d2e,#153f25);border-radius:8px;position:relative;aspect-ratio:3/4;
+  box-shadow:var(--shadow-card);overflow:hidden}
+.pitch-lines{position:absolute;inset:14px;border:1.5px solid rgba(255,255,255,0.35);border-radius:4px}
+.pitch-lines::before{content:'';position:absolute;left:0;right:0;top:50%;border-top:1.5px solid rgba(255,255,255,0.35)}
+.pitch-lines::after{content:'';position:absolute;left:50%;top:50%;width:90px;height:90px;border:1.5px solid rgba(255,255,255,0.35);
+  border-radius:50%;transform:translate(-50%,-50%)}
+.pbox{position:absolute;width:88px;transform:translate(-50%,-50%);text-align:center;cursor:pointer}
+.pcard{background:rgba(255,255,255,0.97);border-radius:6px;padding:4px;box-shadow:0 3px 8px rgba(0,0,0,0.3)}
+.pcard .avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;border:2px solid var(--brand-ink);background:var(--surface-2)}
+.pcard .avatar-ph{width:40px;height:40px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:#fff;border:2px solid var(--brand-ink)}
+.pcard .pname{font-size:9.5px;font-weight:800;margin-top:3px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .prating{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:900;color:var(--brand-ink)}
+.pcard.empty{background:rgba(255,255,255,0.15);padding:10px 4px}
+.pcard.empty .slot-label{font-size:9px;font-weight:800;color:rgba(255,255,255,0.6)}
+</style>
+</head>
+<body>
+<div class="demo-flag">DEMO &mdash; Mejor XI por Liga (prototipo, no enlazado aún)</div>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="ph-top">
+      <div class="brand"><span class="brand-mark"><span class="x">x</span>Stats</span><span class="brand-sub">Best XI</span></div>
+      <a class="back-link" href="fotmob_leaderboard.html">&larr; Volver al buscador</a>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="panel">
+    <div class="fld">
+      <label>Liga</label>
+      <select id="league-sel"></select>
+    </div>
+    <div class="fld">
+      <label>Formación</label>
+      <div class="form-btns" id="form-btns"></div>
+    </div>
+    <div class="fld">
+      <label>Nacionalidad</label>
+      <select id="nat-sel"><option value="">Todas</option></select>
+    </div>
+    <div class="chk-row"><input type="checkbox" id="u23-chk"><label for="u23-chk">Solo Sub-23</label></div>
+    <div class="chk-row"><input type="checkbox" id="contract-chk"><label for="contract-chk">Contrato vence antes de 2027</label></div>
+    <div class="avg-box"><div class="v" id="avg-rating">—</div><div class="l">Rating Promedio del XI</div></div>
+  </div>
+  <div id="pitch-col"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const AVATAR_BG = ['#1f4ea8','#0f7a4e','#b3261e','#92660c','#6d3fae','#1a7f8e','#a1472e','#3a5a9e'];
+function avatarColor(name){ let h=0; for(const c of (name||'?')) h=(h*31+c.charCodeAt(0))>>>0; return AVATAR_BG[h%AVATAR_BG.length]; }
+
+const SLOT_POS = {
+  GK:['keeper_long'], LB:['leftback','left_wing_back'], RB:['rightback','right_wing_back'],
+  LWB:['left_wing_back','leftback'], RWB:['right_wing_back','rightback'], CB:['centerback'],
+  CDM:['centerdefensivemidfielder'], CM:['centermidfielder','centerdefensivemidfielder','centerattackingmidfielder'],
+  CAM:['centerattackingmidfielder'], LM:['leftmidfielder','leftwinger'], RM:['rightmidfielder','rightwinger'],
+  LW:['leftwinger','leftmidfielder'], RW:['rightwinger','rightmidfielder'], ST:['striker'],
+};
+
+const FORMATIONS = {
+  '4-3-3': [
+    {slot:'GK',x:50,y:92},{slot:'LB',x:14,y:72},{slot:'CB',x:37,y:76},{slot:'CB',x:63,y:76},{slot:'RB',x:86,y:72},
+    {slot:'CM',x:25,y:48},{slot:'CM',x:50,y:52},{slot:'CM',x:75,y:48},
+    {slot:'LW',x:16,y:16},{slot:'ST',x:50,y:10},{slot:'RW',x:84,y:16},
+  ],
+  '4-4-2': [
+    {slot:'GK',x:50,y:92},{slot:'LB',x:14,y:72},{slot:'CB',x:37,y:76},{slot:'CB',x:63,y:76},{slot:'RB',x:86,y:72},
+    {slot:'LM',x:14,y:46},{slot:'CM',x:38,y:50},{slot:'CM',x:62,y:50},{slot:'RM',x:86,y:46},
+    {slot:'ST',x:36,y:12},{slot:'ST',x:64,y:12},
+  ],
+  '4-2-3-1': [
+    {slot:'GK',x:50,y:92},{slot:'LB',x:14,y:72},{slot:'CB',x:37,y:76},{slot:'CB',x:63,y:76},{slot:'RB',x:86,y:72},
+    {slot:'CDM',x:36,y:56},{slot:'CDM',x:64,y:56},
+    {slot:'LW',x:16,y:32},{slot:'CAM',x:50,y:30},{slot:'RW',x:84,y:32},
+    {slot:'ST',x:50,y:10},
+  ],
+  '3-5-2': [
+    {slot:'GK',x:50,y:92},{slot:'CB',x:30,y:76},{slot:'CB',x:50,y:79},{slot:'CB',x:70,y:76},
+    {slot:'LWB',x:9,y:50},{slot:'CM',x:34,y:52},{slot:'CM',x:50,y:56},{slot:'CM',x:66,y:52},{slot:'RWB',x:91,y:50},
+    {slot:'ST',x:36,y:12},{slot:'ST',x:64,y:12},
+  ],
+};
+
+let DATA=[], FORMATION='4-3-3';
+
+fetch('data/bestxi_index.json').then(r=>r.json()).then(d=>{
+  DATA = d;
+  const leagues=[...new Set(DATA.map(p=>p.league).filter(Boolean))].sort();
+  $('league-sel').innerHTML = leagues.map(l=>`<option ${l==='Premier League'?'selected':''} value="${l}">${l}</option>`).join('');
+  const nats=[...new Set(DATA.map(p=>p.country).filter(Boolean))].sort();
+  $('nat-sel').innerHTML += nats.map(n=>`<option value="${n}">${n}</option>`).join('');
+
+  $('form-btns').innerHTML = Object.keys(FORMATIONS).map(f=>`<button class="fbtn ${f===FORMATION?'on':''}" data-f="${f}">${f}</button>`).join('');
+  document.querySelectorAll('.fbtn').forEach(b=>b.addEventListener('click',()=>{
+    FORMATION=b.dataset.f;
+    document.querySelectorAll('.fbtn').forEach(x=>x.classList.toggle('on',x===b));
+    build();
+  }));
+
+  ['league-sel','nat-sel'].forEach(id=>$(id).addEventListener('change', build));
+  ['u23-chk','contract-chk'].forEach(id=>$(id).addEventListener('change', build));
+  build();
+});
+
+function build(){
+  const lg = $('league-sel').value;
+  const nat = $('nat-sel').value;
+  const u23 = $('u23-chk').checked;
+  const contractSoon = $('contract-chk').checked;
+
+  let pool = DATA.filter(p=>p.league===lg && p.rating!=null && p.mins>=270);
+  if(nat) pool = pool.filter(p=>p.country===nat);
+  if(u23) pool = pool.filter(p=>p.age!=null && p.age<=23);
+  if(contractSoon) pool = pool.filter(p=>p.contract_end && p.contract_end < '2027-07-01');
+
+  const used = new Set();
+  const slots = FORMATIONS[FORMATION];
+  const picks = slots.map(s=>{
+    const accepted = SLOT_POS[s.slot];
+    const candidates = pool.filter(p=>!used.has(p.id) && accepted.includes(p.pos_key));
+    candidates.sort((a,b)=>b.rating-a.rating);
+    const picked = candidates[0] || null;
+    if(picked) used.add(picked.id);
+    return {...s, player:picked};
+  });
+
+  const ratings = picks.filter(p=>p.player).map(p=>p.player.rating);
+  $('avg-rating').textContent = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(2) : '—';
+
+  $('pitch-col').innerHTML = `<div class="pitch-wrap"><div class="pitch-lines"></div>${picks.map(p=>{
+    if(!p.player){
+      return `<div class="pbox" style="left:${p.x}%;top:${p.y}%"><div class="pcard empty"><div class="slot-label">${p.slot}</div></div></div>`;
+    }
+    const pl=p.player;
+    const initials=(pl.name||'?').split(' ').map(s=>s[0]).filter(Boolean).slice(-2).join('');
+    const avCol = avatarColor(pl.name);
+    const photoHtml = pl.photo ? `<img class="avatar" src="${pl.photo}" onerror="this.outerHTML='<div class=\\'avatar-ph\\' style=\\'background:${avCol}\\'>${initials}</div>'">`
+      : `<div class="avatar-ph" style="background:${avCol}">${initials}</div>`;
+    return `<div class="pbox" style="left:${p.x}%;top:${p.y}%" onclick="location.href='fotmob_player.html?id=${pl.id}'">
+      <div class="pcard">${photoHtml}<div class="pname">${pl.name}</div><div class="prating">${pl.rating.toFixed(2)}</div></div>
+    </div>`;
+  }).join('')}</div>`;
+}
+</script>
+</body>
+</html>
