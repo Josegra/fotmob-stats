@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>xStats &mdash; Copilot (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0f0ec; --surface:#ffffff; --surface-2:#f7f7f4;
+  --ink:#111111; --ink-2:#4a4a4a; --muted:#878787; --line:#e2e2de; --line-strong:#c9c9c3;
+  --brand:#7a3fd1; --brand-ink:#5f2eb0; --brand-wash:#f1ecfb;
+  --shadow-card:0 1px 2px rgba(17,17,17,0.04), 0 8px 20px -14px rgba(17,17,17,0.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.disp{font-family:'Barlow Condensed',sans-serif}
+.mono{font-family:'Roboto Mono',monospace}
+.demo-flag{background:#1a1a1a;color:#ffd166;text-align:center;font-size:11px;font-weight:700;padding:5px;letter-spacing:0.04em;text-transform:uppercase}
+
+.masthead{background-color:#121212;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);
+  background-size:18px 18px;border-bottom:3px solid var(--brand)}
+.pagehead{max-width:900px;margin:0 auto;padding:20px 28px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:19px;letter-spacing:-0.01em;color:#fff}
+.brand-mark .x{color:var(--brand)}
+.brand-sub{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.back-link{color:rgba(255,255,255,0.6);font-size:11.5px;font-weight:700;margin-left:auto}
+.ph-top{display:flex;align-items:center;gap:16px}
+h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:#fff;margin-top:14px}
+.ph-sub{font-size:12.5px;color:rgba(255,255,255,0.6);margin-top:4px;max-width:680px;line-height:1.5}
+
+.app{max-width:900px;margin:0 auto;padding:20px 28px 60px}
+
+.settings{background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;box-shadow:var(--shadow-card);padding:14px;margin-bottom:14px}
+.settings-head{display:flex;align-items:center;gap:8px;cursor:pointer}
+.settings-head .car{margin-left:auto;font-size:11px;color:var(--muted);font-weight:700}
+.settings-title{font-weight:800;font-size:12.5px}
+.settings-status{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:700}
+.settings-status.ok{background:var(--brand-wash);color:var(--brand-ink)}
+.settings-status.bad{background:#fdeceb;color:#b31c10}
+.settings-status.warn{background:#fbf3e1;color:#92660c}
+.settings-body{display:none;margin-top:12px;gap:10px;flex-direction:column}
+.settings-body.show{display:flex}
+.srow{display:flex;gap:8px;align-items:center}
+.srow label{font-size:11px;font-weight:700;color:var(--ink-2);width:88px;flex-shrink:0}
+.srow select, .srow input{flex:1;height:36px;border:1px solid var(--line-strong);border-radius:4px;padding:0 10px;font:inherit;font-size:12.5px}
+.srow .ghostbtn{flex:0 0 auto;height:36px;padding:0 13px;border-radius:4px;border:1px solid var(--line-strong);background:var(--surface-2);
+  font:inherit;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;color:var(--ink-2)}
+.srow .ghostbtn:hover{background:var(--brand-wash);border-color:var(--brand);color:var(--brand-ink)}
+.srow .ghostbtn:disabled{opacity:.5;cursor:default}
+.model-note{font-size:10.5px;color:var(--muted);margin-left:96px}
+.settings-hint{font-size:10.5px;color:var(--muted);line-height:1.5}
+.settings-hint a{color:var(--brand-ink);font-weight:700;text-decoration:underline}
+.secwarn{background:#fdeceb;border:1px solid #f3b4ae;color:#b31c10;border-radius:4px;padding:8px 10px;font-size:11px;line-height:1.5}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{background:var(--surface);border:1px solid var(--line-strong);border-radius:20px;padding:6px 13px;font-size:11.5px;font-weight:600;
+  cursor:pointer;color:var(--ink-2)}
+.chip:hover{background:var(--brand-wash);border-color:var(--brand);color:var(--brand-ink)}
+
+.chatlog{display:flex;flex-direction:column;gap:12px;margin-bottom:14px;min-height:120px}
+.msg{max-width:88%;padding:11px 14px;border-radius:10px;font-size:13px;line-height:1.55}
+.msg.user{align-self:flex-end;background:var(--ink);color:#fff;border-radius:10px 10px 2px 10px}
+.msg.assist{align-self:flex-start;background:var(--surface);border:1px solid var(--line-strong);border-radius:10px 10px 10px 2px;box-shadow:var(--shadow-card)}
+.msg.assist.err{background:#fdeceb;border-color:#f3b4ae;color:#b31c10}
+.msg .tool-tag{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;color:var(--brand-ink);background:var(--brand-wash);
+  padding:2px 8px;border-radius:20px;margin-bottom:7px;letter-spacing:.02em}
+.msg table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+.msg table th{text-align:left;color:var(--muted);font-size:9.5px;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid var(--line-strong)}
+.msg table td{padding:5px 6px;border-bottom:1px solid var(--line)}
+.msg table td.num{text-align:right;font-weight:700;font-family:'Roboto Mono',monospace}
+.typing{display:flex;gap:4px;padding:4px 0}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce 1.1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+
+.inputrow{display:flex;gap:8px;position:sticky;bottom:16px}
+#qinput{flex:1;height:46px;border:1px solid var(--line-strong);border-radius:6px;padding:0 14px;font:inherit;font-size:13px;background:var(--surface);box-shadow:var(--shadow-card)}
+#sendbtn{height:46px;padding:0 20px;border-radius:6px;border:none;background:var(--brand);color:#fff;font-weight:800;font-size:12.5px;cursor:pointer}
+#sendbtn:disabled{opacity:.5;cursor:default}
+</style>
+</head>
+<body>
+<div class="demo-flag">DEMO &mdash; Copilot, asistente con IA (prototipo, no enlazado aun)</div>
+<div class="masthead">
+  <div class="pagehead">
+    <div class="ph-top">
+      <div class="brand"><span class="brand-mark"><span class="x">x</span>Stats</span><span class="brand-sub">Copilot</span></div>
+      <a class="back-link" href="fotmob_leaderboard.html">&larr; Volver al buscador</a>
+    </div>
+    <h1>Preguntale a la base de datos</h1>
+    <p class="ph-sub">Un LLM traduce tu pregunta en una consulta real sobre los datos de Fotmob+Sofascore (nunca inventa numeros) y te responde en lenguaje natural. Indica siempre la liga y la temporada para resultados mas precisos.</p>
+  </div>
+</div>
+
+<div class="app">
+  <div class="settings">
+    <div class="settings-head" onclick="document.getElementById('settings-body').classList.toggle('show')">
+      <span class="settings-title">Conexion al modelo</span>
+      <span class="settings-status bad" id="conn-status">sin API key</span>
+      <span class="car">configurar &#9662;</span>
+    </div>
+    <div class="settings-body" id="settings-body">
+      <div class="secwarn">Pega tu API key SOLO en el campo de abajo, nunca en el cuadro de preguntas &mdash; lo que escribas ahi se envia tal cual al proveedor y queda visible en el chat.</div>
+      <div class="srow">
+        <label>Proveedor</label>
+        <select id="provider-sel">
+          <option value="groq">Groq (recomendado, gratis + rapido)</option>
+          <option value="openai">OpenAI</option>
+        </select>
+      </div>
+      <div class="srow">
+        <label>API key</label>
+        <input id="apikey-input" type="password" placeholder="pega tu API key (se guarda solo en este navegador)">
+      </div>
+      <div class="srow">
+        <label>Modelo</label>
+        <select id="model-sel"><option value="">— pega tu API key y pulsa Cargar modelos —</option></select>
+        <button type="button" class="ghostbtn" id="load-models-btn">Cargar modelos</button>
+      </div>
+      <div class="model-note" id="model-note"></div>
+      <div class="settings-hint">
+        La key se guarda solo en <span class="mono">localStorage</span> de tu navegador y se envia directamente al proveedor (Groq/OpenAI) en cada pregunta &mdash; nunca pasa por ningun servidor nuestro.
+        "Cargar modelos" le pregunta directamente a tu cuenta cuales tienes disponibles, en vez de que nosotros adivinemos un nombre que puede haber cambiado.
+        Consigue una key gratis en <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a> o en <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>.
+      </div>
+    </div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <div class="chatlog" id="chatlog"></div>
+  <div class="inputrow">
+    <input id="qinput" placeholder="Ej: ¿Quien fue el mejor jugador de la Premier League en 2026-2027?">
+    <button id="sendbtn">Preguntar</button>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const BASE_URL = { groq: 'https://api.groq.com/openai/v1', openai: 'https://api.openai.com/v1' };
+const EXCLUDE_PAT = /whisper|tts|guard|moderation|embedding|dall-e|davinci|babbage|instruct-only/i;
+const PREFERRED_PAT = /llama-4|llama4|gpt-oss|kimi|qwen3|qwen-3|gpt-4o|gpt-4\.1/i;
+
+let DATA=[], SEASONS=[], LEAGUES=[];
+
+fetch('data/merged_index.json').then(r=>r.json()).then(d=>{
+  DATA = d;
+  SEASONS = [...new Set(DATA.map(p=>p.season))].sort().reverse();
+  LEAGUES = [...new Set(DATA.map(p=>p.league).filter(Boolean))].sort();
+});
+
+// ---------- settings persistence ----------
+function loadSettings(){
+  const provider = localStorage.getItem('xstats_llm_provider') || 'groq';
+  $('provider-sel').value = provider;
+  $('apikey-input').value = localStorage.getItem('xstats_llm_key_'+provider) || '';
+  const savedModel = localStorage.getItem('xstats_llm_model_'+provider) || '';
+  if(savedModel){ $('model-sel').innerHTML = `<option value="${savedModel}">${savedModel}</option>`; }
+  updateConnStatus();
+  if($('apikey-input').value.trim()) loadModels();
+}
+function updateConnStatus(){
+  const key = $('apikey-input').value.trim();
+  const el = $('conn-status');
+  if(key){ el.textContent = 'conectado ('+$('provider-sel').value+')'; el.className='settings-status ok'; }
+  else { el.textContent = 'sin API key'; el.className='settings-status bad'; }
+}
+$('provider-sel').addEventListener('change', ()=>{
+  const provider = $('provider-sel').value;
+  $('apikey-input').value = localStorage.getItem('xstats_llm_key_'+provider) || '';
+  const savedModel = localStorage.getItem('xstats_llm_model_'+provider) || '';
+  $('model-sel').innerHTML = savedModel ? `<option value="${savedModel}">${savedModel}</option>` : `<option value="">— pega tu API key y pulsa Cargar modelos —</option>`;
+  $('model-note').textContent = '';
+  updateConnStatus();
+  if($('apikey-input').value.trim()) loadModels();
+});
+$('apikey-input').addEventListener('input', ()=>{
+  localStorage.setItem('xstats_llm_key_'+$('provider-sel').value, $('apikey-input').value.trim());
+  localStorage.setItem('xstats_llm_provider', $('provider-sel').value);
+  updateConnStatus();
+});
+$('model-sel').addEventListener('change', ()=>{
+  localStorage.setItem('xstats_llm_model_'+$('provider-sel').value, $('model-sel').value);
+});
+$('load-models-btn').addEventListener('click', loadModels);
+try{ loadSettings(); }catch(e){}
+
+async function loadModels(){
+  const provider = $('provider-sel').value;
+  const apiKey = $('apikey-input').value.trim();
+  const btn = $('load-models-btn');
+  const note = $('model-note');
+  if(!apiKey){ note.textContent = 'Pega tu API key primero.'; note.style.color = '#b31c10'; return; }
+  btn.disabled = true;
+  const prevText = btn.textContent;
+  btn.textContent = 'Cargando...';
+  note.textContent = '';
+  try{
+    const res = await fetch(`${BASE_URL[provider]}/models`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+    if(!res.ok){
+      const t = await res.text().catch(()=> '');
+      throw new Error(`${res.status} — ${t.slice(0,200)}`);
+    }
+    const json = await res.json();
+    let ids = (json.data || []).map(m=>m.id).filter(id=>!EXCLUDE_PAT.test(id));
+    ids.sort((a,b)=> (PREFERRED_PAT.test(b) - PREFERRED_PAT.test(a)) || a.localeCompare(b));
+    if(!ids.length) throw new Error('la cuenta no devolvio ningun modelo de chat utilizable');
+    const saved = localStorage.getItem('xstats_llm_model_'+provider);
+    const pick = (saved && ids.includes(saved)) ? saved : ids.find(id=>PREFERRED_PAT.test(id)) || ids[0];
+    $('model-sel').innerHTML = ids.map(id=>`<option value="${id}" ${id===pick?'selected':''}>${id}</option>`).join('');
+    localStorage.setItem('xstats_llm_model_'+provider, pick);
+    note.textContent = `${ids.length} modelos disponibles en tu cuenta.`;
+    note.style.color = 'var(--muted)';
+  }catch(err){
+    note.textContent = `No se pudo cargar la lista: ${err.message}`;
+    note.style.color = '#b31c10';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = prevText;
+  }
+}
+
+// ---------- quick prompts ----------
+const CHIPS = [
+  '¿Quien fue el mejor jugador de la Premier League en 2026-2027?',
+  'Top 5 goleadores de LaLiga en 2025-2026',
+  '¿Que defensa tiene mejor rating en la Serie A esta temporada?',
+  'Compara los mejores centrocampistas de la Bundesliga en 26/27 y en 25/26',
+];
+$('chips').innerHTML = CHIPS.map(c=>`<div class="chip" data-q="${c}">${c}</div>`).join('');
+$('chips').querySelectorAll('.chip').forEach(c=>c.addEventListener('click', ()=>{ $('qinput').value = c.dataset.q; sendMessage(); }));
+
+// ---------- position grouping + stat extraction (mirrors similar.html) ----------
+function posGroup(pk){
+  pk = pk || '';
+  if(pk.includes('keeper')) return 'GK';
+  if(pk.includes('back')) return 'DEF';
+  if(pk.includes('winger') || pk.includes('striker')) return 'FWD';
+  return 'MID';
+}
+function attackingStat(p, key){
+  for(const catName of Object.keys(p.cats||{})){
+    if(!catName.startsWith('Attacking')) continue;
+    const v = p.cats[catName][key];
+    if(v) return v[0];
+  }
+  return 0;
+}
+function getMetric(p, metric){
+  switch(metric){
+    case 'rating': {
+      const vals=[p.fotmob_rating, p.sofascore_rating].filter(v=>v!=null);
+      return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+    }
+    case 'goals': return attackingStat(p,'goals');
+    case 'assists': return attackingStat(p,'assists');
+    case 'market_value': return p.mv ?? null;
+    case 'age': return p.age ?? null;
+    case 'minutes': return p.mins ?? null;
+    default: return null;
+  }
+}
+
+// ---------- the tool the model can call ----------
+const TOOLS = [{
+  type: 'function',
+  function: {
+    name: 'query_stats',
+    description: "Consulta la base de datos real de jugadores de futbol (Fotmob+Sofascore fusionados) para responder cualquier pregunta sobre jugadores, rankings o comparaciones. SIEMPRE hay que llamar a esta funcion antes de responder cualquier pregunta sobre jugadores o estadisticas concretas — nunca contestar de memoria.",
+    parameters: {
+      type: 'object',
+      properties: {
+        league: { type: 'string', description: "Nombre (o parte del nombre) de la liga, ej. 'Premier League', 'LaLiga'. Omitir para todas las ligas." },
+        season: { type: 'string', description: `Temporada a filtrar. Valores validos en los datos: ${SEASONS.length?SEASONS.join(', '):"'2026-2027', '2026', '2025-2026'"}. Si el usuario no la menciona, usar la temporada mas reciente disponible ('2026-2027').` },
+        metric: { type: 'string', enum: ['rating','goals','assists','market_value','age','minutes'], description: 'Estadistica por la que ordenar/rankear.' },
+        position_group: { type: 'string', enum: ['GK','DEF','MID','FWD','ANY'], description: 'Filtrar por grupo de posicion.' },
+        team: { type: 'string', description: 'Nombre (o parte del nombre) de un equipo concreto. Omitir salvo que el usuario pregunte por un equipo.' },
+        top_n: { type: 'integer', description: 'Cuantos jugadores devolver, por defecto 5.' },
+      },
+      required: ['metric'],
+    },
+  },
+}];
+
+function filterByField(pool, field, query){
+  const q = (query||'').trim().toLowerCase();
+  if(!q) return pool;
+  const exact = pool.filter(p=>(p[field]||'').toLowerCase()===q);
+  if(exact.length) return exact;
+  return pool.filter(p=>(p[field]||'').toLowerCase().includes(q));
+}
+
+function runQueryStats(args){
+  const metric = args.metric || 'rating';
+  const season = (args.season || '2026-2027').trim();
+  const topN = Math.min(args.top_n || 5, 15);
+  let pool = DATA.filter(p=>p.season===season);
+  if(args.league) pool = filterByField(pool, 'league', args.league);
+  if(args.team) pool = filterByField(pool, 'team', args.team);
+  if(args.position_group && args.position_group!=='ANY') pool = pool.filter(p=>posGroup(p.pos_key)===args.position_group);
+
+  const ranked = pool
+    .map(p=>({ name:p.name, team:p.team, league:p.league, season:p.season, pos:p.pos, value: getMetric(p, metric) }))
+    .filter(r=>r.value!=null)
+    .sort((a,b)=>b.value-a.value)
+    .slice(0, topN);
+
+  return {
+    metric, season,
+    league_filter: args.league || null,
+    team_filter: args.team || null,
+    position_filter: args.position_group || null,
+    matched_pool_size: pool.length,
+    results: ranked,
+  };
+}
+
+// ---------- chat ----------
+let MESSAGES = [{
+  role: 'system',
+  content: "Eres el asistente de datos de xStats, una webapp de estadisticas de futbol (Fotmob+Sofascore fusionados). Respondes SIEMPRE en español. Para cualquier pregunta sobre jugadores, rankings, goles, ratings o comparaciones DEBES llamar a la funcion query_stats — nunca inventes nombres ni numeros de memoria. Si el usuario no especifica la temporada, usa la mas reciente y acláralo en tu respuesta. Si la pregunta implica comparar dos temporadas o dos ligas, llama a query_stats una vez por cada combinacion necesaria antes de responder. Redacta la respuesta final de forma breve y natural, citando los numeros reales que te devuelve la funcion.",
+}];
+
+function addMsg(role, html){
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = html;
+  $('chatlog').appendChild(div);
+  div.scrollIntoView({behavior:'smooth', block:'end'});
+  return div;
+}
+
+function resultsTable(toolResult){
+  if(!toolResult.results || !toolResult.results.length) return '';
+  const rows = toolResult.results.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.team||'—'}</td><td class="num">${typeof r.value==='number'?r.value.toFixed(2):r.value}</td></tr>`).join('');
+  return `<table><thead><tr><th>#</th><th>Jugador</th><th>Equipo</th><th>${toolResult.metric}</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function callLLM(provider, apiKey, model, messages){
+  const res = await fetch(`${BASE_URL[provider]}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    body: JSON.stringify({ model, messages, tools: TOOLS, tool_choice: 'auto', temperature: 0.3 }),
+  });
+  if(!res.ok){
+    const t = await res.text().catch(()=> '');
+    throw new Error(`${res.status} ${res.statusText} — ${t.slice(0,300)}`);
+  }
+  const json = await res.json();
+  return json.choices[0].message;
+}
+
+async function sendMessage(){
+  const q = $('qinput').value.trim();
+  if(!q) return;
+  const provider = $('provider-sel').value;
+  const apiKey = $('apikey-input').value.trim();
+  const model = $('model-sel').value;
+  if(!apiKey){
+    document.getElementById('settings-body').classList.add('show');
+    addMsg('assist err', 'Falta la API key. Abre "Conexion al modelo" arriba y pega una key de Groq u OpenAI.');
+    return;
+  }
+  if(!model){
+    document.getElementById('settings-body').classList.add('show');
+    addMsg('assist err', 'Todavia no has cargado ningun modelo. Pulsa "Cargar modelos" arriba y elige uno de la lista.');
+    return;
+  }
+  addMsg('user', q.replace(/</g,'&lt;'));
+  $('qinput').value = '';
+  $('sendbtn').disabled = true;
+  const typingEl = addMsg('assist', '<div class="typing"><span></span><span></span><span></span></div>');
+
+  MESSAGES.push({ role: 'user', content: q });
+
+  try{
+    let toolTag = '';
+    for(let round=0; round<4; round++){
+      const msg = await callLLM(provider, apiKey, model, MESSAGES);
+      MESSAGES.push(msg);
+      if(msg.tool_calls && msg.tool_calls.length){
+        for(const tc of msg.tool_calls){
+          let args = {};
+          try{ args = JSON.parse(tc.function.arguments||'{}'); }catch(e){}
+          const result = runQueryStats(args);
+          toolTag += resultsTable(result);
+          MESSAGES.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
+        }
+        continue; // ask the model again with tool results in context
+      }
+      // final answer
+      typingEl.remove();
+      const tagHtml = toolTag ? `<span class="tool-tag">&#9889; consultado en vivo</span>` : '';
+      addMsg('assist', tagHtml + `<div>${(msg.content||'').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>` + toolTag);
+      $('sendbtn').disabled = false;
+      return;
+    }
+    typingEl.remove();
+    addMsg('assist err', 'El modelo no termino de resolver la consulta tras varios intentos.');
+  }catch(err){
+    typingEl.remove();
+    addMsg('assist err', `Error al llamar al modelo: ${err.message.replace(/</g,'&lt;')}<br><span style="font-weight:400">Revisa la API key, o si tu navegador bloquea la peticion por CORS (prueba con el otro proveedor).</span>`);
+  }finally{
+    $('sendbtn').disabled = false;
+  }
+}
+
+$('sendbtn').addEventListener('click', sendMessage);
+$('qinput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendMessage(); });
+</script>
+</body>
+</html>
