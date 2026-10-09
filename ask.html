@@ -114,6 +114,7 @@ h1{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;colo
       <div class="srow">
         <label>Modelo</label>
         <input id="model-input" type="text">
+        <button type="button" id="reset-model-btn" class="chip" style="height:36px;white-space:nowrap">Restablecer</button>
       </div>
       <div class="settings-hint">
         La key se guarda solo en <span class="mono">localStorage</span> de tu navegador y se envia directamente al proveedor (Groq/OpenAI) en cada pregunta &mdash; nunca pasa por ningun servidor nuestro.
@@ -178,6 +179,11 @@ $('apikey-input').addEventListener('input', ()=>{
 });
 $('model-input').addEventListener('input', ()=>{
   localStorage.setItem('xstats_llm_model_'+$('provider-sel').value, $('model-input').value.trim());
+});
+$('reset-model-btn').addEventListener('click', ()=>{
+  const provider = $('provider-sel').value;
+  $('model-input').value = DEFAULT_MODEL[provider];
+  localStorage.setItem('xstats_llm_model_'+provider, DEFAULT_MODEL[provider]);
 });
 try{ loadSettings(); }catch(e){}
 
